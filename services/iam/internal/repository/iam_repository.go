@@ -7,6 +7,7 @@ import (
 	"github.com/araujoarthur/intranetbackend/services/iam/internal/repository/sqlc/generated"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
@@ -94,6 +95,14 @@ func mapError(err error) error {
 
 	if errors.Is(err, pgx.ErrNoRows) {
 		return ErrNotFound
+	}
+
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) {
+		switch pgErr.Code {
+		case "23505": // unique_violation
+			return ErrConflict
+		}
 	}
 
 	return err
