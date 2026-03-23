@@ -19,6 +19,7 @@ func main() {
 	}
 
 	rootCmd.AddCommand(commands.DBCmd())
+	rootCmd.AddCommand(commands.KeysCmd())
 
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)

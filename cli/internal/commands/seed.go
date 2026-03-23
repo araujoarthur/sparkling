@@ -77,7 +77,7 @@ func runSeed(args []string, fn func(*sql.DB, string, ...goose.OptionsFunc) error
 
 	var targets []string
 	if len(args) == 1 {
-		targets = []string{args[0]}
+		targets = []string{args[0]} // the list of targets is only the passed value
 	} else {
 		targets, err = discoverServices(seedsRoot)
 		if err != nil {

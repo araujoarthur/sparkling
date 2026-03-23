@@ -10,6 +10,8 @@ never on concrete service implementations.
 
 Folder structure:
   domain/
+  ├── iam_domain.go        shared helpers and validators
+  ├── builtins.go          built-in permission name constants
   ├── roles.go             RoleService interface + implementation
   ├── permissions.go       PermissionService interface + implementation
   ├── role_permissions.go  RolePermissionService interface + implementation
@@ -21,6 +23,7 @@ Folder structure:
 ## Permissions
 
 Permission names must follow the `scope:resource:action` format where:
+
 - **scope** maps to a service (`auth`, `iam`, `profile`, `webapp`) or `global`
 - **resource** is the entity being acted on within that scope
 - **action** is the operation being performed

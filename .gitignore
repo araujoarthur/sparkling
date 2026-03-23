@@ -1,3 +1,4 @@
 .env
 setup.sql
 .exe
+*.pem

@@ -5,6 +5,8 @@ import (
 	"time"
 
 	"github.com/araujoarthur/intranetbackend/services/iam/internal/repository/sqlc/generated"
+	"github.com/araujoarthur/intranetbackend/shared/pkg/apierror"
+	"github.com/araujoarthur/intranetbackend/shared/pkg/types"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -15,20 +17,20 @@ import (
 // Sentinel Errors
 // --------------------------------
 var (
-	ErrNotFound        = errors.New("not found")
-	ErrConflict        = errors.New("already exists")
-	ErrForbidden       = errors.New("forbidden")
-	ErrInvalidArgument = errors.New("invalid argument")
+	ErrNotFound        = apierror.ErrNotFound
+	ErrConflict        = apierror.ErrConflict
+	ErrForbidden       = apierror.ErrForbidden
+	ErrInvalidArgument = apierror.ErrInvalidArgument
 )
 
 // --------------------------------
 // Domain Types
 // --------------------------------
-type PrincipalType string
+type PrincipalType = types.PrincipalType // Type alias
 
 const (
-	PrincipalTypeUser    PrincipalType = "user"
-	PrincipalTypeService PrincipalType = "service"
+	PrincipalTypeUser    PrincipalType = types.PrincipalTypeUser
+	PrincipalTypeService PrincipalType = types.PrincipalTypeService
 )
 
 // Role represents an IAM role that can be assigned to principals.
