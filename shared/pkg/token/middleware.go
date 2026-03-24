@@ -10,7 +10,20 @@ import (
 
 	"github.com/araujoarthur/intranetbackend/shared/pkg/apierror"
 	"github.com/araujoarthur/intranetbackend/shared/pkg/response"
+	"github.com/araujoarthur/intranetbackend/shared/pkg/types"
 )
+
+// actingPrincipalKey is a private type for storing the acting principal ID in context.
+type actingPrincipalKey struct{}
+
+// ActingPrincipalFromContext extracts the acting principal ID from the request context.
+// This is the user on whose behalf the service is acting, passed via X-Principal-ID header.
+// Returns empty string if no acting principal is present — meaning the service is acting
+// on its own behalf.
+func ActingPrincipalFromContext(ctx context.Context) string {
+	id, _ := ctx.Value(actingPrincipalKey{}).(string)
+	return id
+}
 
 // contextKey is a private type for storing claims in request context.
 // Using a private type prevents collisions with other packages.
@@ -18,25 +31,25 @@ type contextKey struct{}
 
 // Middleware returns a chi-compatible middleware that validates the Bearer token
 // in the Authorization header and injects the parsed Claims into the request context.
+// Only service tokens are accepted — requests bearing user tokens are rejected with 401.
+// The acting principal (the user on whose behalf the service is acting) is extracted
+// from the X-Principal-ID header and injected into the context separately.
 // Requests with missing, invalid, or expired tokens are rejected with 401.
 func Middleware(publicKey *rsa.PublicKey) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// extract the Authorization header
 			authHeader := r.Header.Get("Authorization")
 			if authHeader == "" {
 				response.Error(w, apierror.ErrUnauthorized, "missing authorization header")
 				return
 			}
 
-			// validate the Bearer format
 			parts := strings.SplitN(authHeader, " ", 2)
 			if len(parts) != 2 || parts[0] != "Bearer" {
 				response.Error(w, apierror.ErrInvalidArgument, "invalid authorization header format")
 				return
 			}
 
-			// parse and validate the token
 			claims, err := Parse(parts[1], publicKey)
 			if err != nil {
 				if errors.Is(err, ErrExpiredToken) {
@@ -47,8 +60,18 @@ func Middleware(publicKey *rsa.PublicKey) func(http.Handler) http.Handler {
 				return
 			}
 
-			// inject claims into context and pass to next handler
+			// only service tokens are accepted by internal services
+			if claims.PrincipalType != types.PrincipalTypeService {
+				response.Error(w, apierror.ErrUnauthorized, "only service tokens are accepted")
+				return
+			}
+
+			// extract the acting principal from the header
+			// this is the user on whose behalf the service is acting
+			actingPrincipalID := r.Header.Get("X-Principal-ID")
+
 			ctx := context.WithValue(r.Context(), contextKey{}, claims)
+			ctx = context.WithValue(ctx, actingPrincipalKey{}, actingPrincipalID)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
