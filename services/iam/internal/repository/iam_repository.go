@@ -1,27 +1,16 @@
 package repository
 
 import (
-	"errors"
 	"time"
 
 	"github.com/araujoarthur/intranetbackend/services/iam/internal/repository/sqlc/generated"
-	"github.com/araujoarthur/intranetbackend/shared/pkg/apierror"
 	"github.com/araujoarthur/intranetbackend/shared/pkg/types"
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgconn"
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 // --------------------------------
-// Sentinel Errors
+// Sentinel Errors (definitive move to shared/pkg/apierror)
 // --------------------------------
-var (
-	ErrNotFound        = apierror.ErrNotFound
-	ErrConflict        = apierror.ErrConflict
-	ErrForbidden       = apierror.ErrForbidden
-	ErrInvalidArgument = apierror.ErrInvalidArgument
-)
 
 // --------------------------------
 // Domain Types
@@ -70,45 +59,8 @@ type PrincipalRole struct {
 }
 
 // --------------------------------
-// Helpers
+// Helpers (moved to shared/pkg/helpers)
 // --------------------------------
-
-// pgxText converts a Go string into a pgtype.Text for use with nullable text columns.
-// The value is marked valid only when the string is non-empty, so empty strings
-// are stored as NULL rather than as empty strings in the database.
-func pgxText(s string) pgtype.Text {
-	return pgtype.Text{String: s, Valid: s != ""}
-}
-
-// --------------------------------
-// Error Mapper
-// --------------------------------
-
-// mapError translates low-level pgx errors into repository sentinel errors
-// so callers never need to import or inspect pgx directly.
-//
-// Mappings:
-//   - pgx.ErrNoRows → ErrNotFound
-//   - all other errors are returned unchanged
-func mapError(err error) error {
-	if err == nil {
-		return nil
-	}
-
-	if errors.Is(err, pgx.ErrNoRows) {
-		return ErrNotFound
-	}
-
-	var pgErr *pgconn.PgError
-	if errors.As(err, &pgErr) {
-		switch pgErr.Code {
-		case "23505": // unique_violation
-			return ErrConflict
-		}
-	}
-
-	return err
-}
 
 // --------------------------------
 // Domain Mappers

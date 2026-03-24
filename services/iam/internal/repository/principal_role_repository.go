@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"github.com/araujoarthur/intranetbackend/services/iam/internal/repository/sqlc/generated"
+	"github.com/araujoarthur/intranetbackend/shared/pkg/helpers"
 	"github.com/google/uuid"
 )
 
@@ -53,7 +54,7 @@ func (r *principalRoleRepository) Assign(ctx context.Context, principalID, roleI
 	})
 
 	if err != nil {
-		return PrincipalRole{}, fmt.Errorf("PrincipalRoleRepository.Assign: %w", mapError(err))
+		return PrincipalRole{}, fmt.Errorf("PrincipalRoleRepository.Assign: %w", helpers.MapError(err))
 	}
 
 	return toPrincipalRole(row), nil
@@ -66,7 +67,7 @@ func (r *principalRoleRepository) Remove(ctx context.Context, principalID, roleI
 	})
 
 	if err != nil {
-		return fmt.Errorf("PrincipalRoleRepository.Remove: %w", mapError(err))
+		return fmt.Errorf("PrincipalRoleRepository.Remove: %w", helpers.MapError(err))
 	}
 
 	return nil
@@ -76,7 +77,7 @@ func (r *principalRoleRepository) ListRolesByPrincipal(ctx context.Context, prin
 	rows, err := r.q.ListRolesByPrincipal(ctx, principalID)
 
 	if err != nil {
-		return nil, fmt.Errorf("PrincipalRoleRepository.ListRolesByPrincipal: %w", mapError(err))
+		return nil, fmt.Errorf("PrincipalRoleRepository.ListRolesByPrincipal: %w", helpers.MapError(err))
 	}
 
 	roles := make([]Role, len(rows))
@@ -92,7 +93,7 @@ func (r *principalRoleRepository) ListPrincipalsByRole(ctx context.Context, role
 	rows, err := r.q.ListPrincipalsByRole(ctx, roleID)
 
 	if err != nil {
-		return nil, fmt.Errorf("PrincipalRoleRepository.ListPrincipalsByRole: %w", mapError(err))
+		return nil, fmt.Errorf("PrincipalRoleRepository.ListPrincipalsByRole: %w", helpers.MapError(err))
 	}
 
 	principals := make([]Principal, len(rows))
@@ -111,7 +112,7 @@ func (r *principalRoleRepository) PrincipalHasRole(ctx context.Context, principa
 	})
 
 	if err != nil {
-		return false, fmt.Errorf("PrincipalRoleRepository.PrincipalHasRole: %w", mapError(err))
+		return false, fmt.Errorf("PrincipalRoleRepository.PrincipalHasRole: %w", helpers.MapError(err))
 	}
 
 	return res, nil

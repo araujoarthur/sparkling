@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/araujoarthur/intranetbackend/services/iam/internal/repository/sqlc/generated"
+	"github.com/araujoarthur/intranetbackend/shared/pkg/helpers"
 	"github.com/google/uuid"
 )
 
@@ -47,7 +48,7 @@ func (r *rolePermissionRepository) Assign(ctx context.Context, roleID, permissio
 	})
 
 	if err != nil {
-		return fmt.Errorf("RolePermissionRepository.Assign: %w", mapError(err))
+		return fmt.Errorf("RolePermissionRepository.Assign: %w", helpers.MapError(err))
 	}
 
 	return nil
@@ -60,7 +61,7 @@ func (r *rolePermissionRepository) Remove(ctx context.Context, roleID, permissio
 	})
 
 	if err != nil {
-		return fmt.Errorf("RolePermissionRepository.Remove: %w", mapError(err))
+		return fmt.Errorf("RolePermissionRepository.Remove: %w", helpers.MapError(err))
 	}
 
 	return nil
@@ -73,7 +74,7 @@ func (r *rolePermissionRepository) RoleHasPermission(ctx context.Context, roleID
 	})
 
 	if err != nil {
-		return false, fmt.Errorf("RolePermissionRepository.RoleHasPermission: %w", mapError(err))
+		return false, fmt.Errorf("RolePermissionRepository.RoleHasPermission: %w", helpers.MapError(err))
 	}
 
 	return res, nil
@@ -82,7 +83,7 @@ func (r *rolePermissionRepository) RoleHasPermission(ctx context.Context, roleID
 func (r *rolePermissionRepository) ListRolesByPermission(ctx context.Context, permissionID uuid.UUID) ([]Role, error) {
 	rows, err := r.q.ListRolesByPermission(ctx, permissionID)
 	if err != nil {
-		return nil, fmt.Errorf("RolePermissionRepository.ListRolesByPermission: %w", mapError(err))
+		return nil, fmt.Errorf("RolePermissionRepository.ListRolesByPermission: %w", helpers.MapError(err))
 	}
 
 	roles := make([]Role, len(rows))

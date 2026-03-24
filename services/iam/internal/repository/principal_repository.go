@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/araujoarthur/intranetbackend/services/iam/internal/repository/sqlc/generated"
+	"github.com/araujoarthur/intranetbackend/shared/pkg/helpers"
 	"github.com/google/uuid"
 )
 
@@ -67,7 +68,7 @@ type principalRepository struct {
 func (r *principalRepository) GetByID(ctx context.Context, id uuid.UUID) (Principal, error) {
 	row, err := r.q.GetPrincipalByID(ctx, id)
 	if err != nil {
-		return Principal{}, fmt.Errorf("PrincipalRepository.GetByID: %w", mapError(err))
+		return Principal{}, fmt.Errorf("PrincipalRepository.GetByID: %w", helpers.MapError(err))
 	}
 
 	return toPrincipal(row), nil
@@ -79,7 +80,7 @@ func (r *principalRepository) GetByExternalID(ctx context.Context, externalID uu
 		PrincipalType: generated.IamPrincipalType(principalType),
 	})
 	if err != nil {
-		return Principal{}, fmt.Errorf("PrincipalRepository.GetByExternalID: %w", mapError(err))
+		return Principal{}, fmt.Errorf("PrincipalRepository.GetByExternalID: %w", helpers.MapError(err))
 	}
 
 	return toPrincipal(row), nil
@@ -88,7 +89,7 @@ func (r *principalRepository) GetByExternalID(ctx context.Context, externalID uu
 func (r *principalRepository) List(ctx context.Context) ([]Principal, error) {
 	rows, err := r.q.ListPrincipals(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("PrincipalRepository.List: %w", mapError(err))
+		return nil, fmt.Errorf("PrincipalRepository.List: %w", helpers.MapError(err))
 	}
 
 	principals := make([]Principal, len(rows))
@@ -103,7 +104,7 @@ func (r *principalRepository) List(ctx context.Context) ([]Principal, error) {
 func (r *principalRepository) ListByType(ctx context.Context, principalType PrincipalType) ([]Principal, error) {
 	rows, err := r.q.ListPrincipalsByType(ctx, generated.IamPrincipalType(principalType))
 	if err != nil {
-		return nil, fmt.Errorf("PrincipalRepository.ListByType: %w", mapError(err))
+		return nil, fmt.Errorf("PrincipalRepository.ListByType: %w", helpers.MapError(err))
 	}
 
 	principals := make([]Principal, len(rows))
@@ -121,7 +122,7 @@ func (r *principalRepository) Create(ctx context.Context, externalID uuid.UUID, 
 		PrincipalType: generated.IamPrincipalType(principalType),
 	})
 	if err != nil {
-		return Principal{}, fmt.Errorf("PrincipalRepository.Create: %w", mapError(err))
+		return Principal{}, fmt.Errorf("PrincipalRepository.Create: %w", helpers.MapError(err))
 	}
 
 	return toPrincipal(row), nil
@@ -130,7 +131,7 @@ func (r *principalRepository) Create(ctx context.Context, externalID uuid.UUID, 
 func (r *principalRepository) Activate(ctx context.Context, id uuid.UUID) (Principal, error) {
 	row, err := r.q.ActivatePrincipal(ctx, id)
 	if err != nil {
-		return Principal{}, fmt.Errorf("PrincipalRepository.Activate: %w", mapError(err))
+		return Principal{}, fmt.Errorf("PrincipalRepository.Activate: %w", helpers.MapError(err))
 	}
 
 	return toPrincipal(row), nil
@@ -139,7 +140,7 @@ func (r *principalRepository) Activate(ctx context.Context, id uuid.UUID) (Princ
 func (r *principalRepository) Deactivate(ctx context.Context, id uuid.UUID) (Principal, error) {
 	row, err := r.q.DeactivatePrincipal(ctx, id)
 	if err != nil {
-		return Principal{}, fmt.Errorf("PrincipalRepository.Activate: %w", mapError(err))
+		return Principal{}, fmt.Errorf("PrincipalRepository.Activate: %w", helpers.MapError(err))
 	}
 
 	return toPrincipal(row), nil
@@ -148,7 +149,7 @@ func (r *principalRepository) Deactivate(ctx context.Context, id uuid.UUID) (Pri
 func (r *principalRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	err := r.q.DeletePrincipal(ctx, id)
 	if err != nil {
-		return fmt.Errorf("PrincipalRepository.Delete: %w", mapError(err))
+		return fmt.Errorf("PrincipalRepository.Delete: %w", helpers.MapError(err))
 	}
 
 	return nil
@@ -157,7 +158,7 @@ func (r *principalRepository) Delete(ctx context.Context, id uuid.UUID) error {
 func (r *principalRepository) GetPermissions(ctx context.Context, id uuid.UUID) ([]Permission, error) {
 	rows, err := r.q.GetPrincipalPermissions(ctx, id)
 	if err != nil {
-		return nil, fmt.Errorf("PrincipalRepository.GetPermissions: %w", mapError(err))
+		return nil, fmt.Errorf("PrincipalRepository.GetPermissions: %w", helpers.MapError(err))
 	}
 
 	permissions := make([]Permission, len(rows))

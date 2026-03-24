@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"github.com/araujoarthur/intranetbackend/services/iam/internal/repository/sqlc/generated"
+	"github.com/araujoarthur/intranetbackend/shared/pkg/helpers"
 	"github.com/google/uuid"
 )
 
@@ -52,7 +53,7 @@ type permissionRepository struct {
 func (r *permissionRepository) GetByID(ctx context.Context, id uuid.UUID) (Permission, error) {
 	row, err := r.q.GetPermissionByID(ctx, id)
 	if err != nil {
-		return Permission{}, fmt.Errorf("PermissionRepository.GetByID: %w", mapError(err))
+		return Permission{}, fmt.Errorf("PermissionRepository.GetByID: %w", helpers.MapError(err))
 	}
 
 	return toPermission(row), nil
@@ -63,7 +64,7 @@ func (r *permissionRepository) GetByID(ctx context.Context, id uuid.UUID) (Permi
 func (r *permissionRepository) GetByName(ctx context.Context, name string) (Permission, error) {
 	row, err := r.q.GetPermissionByName(ctx, name)
 	if err != nil {
-		return Permission{}, fmt.Errorf("PermissionRepository.GetByName: %w", mapError(err))
+		return Permission{}, fmt.Errorf("PermissionRepository.GetByName: %w", helpers.MapError(err))
 	}
 
 	return toPermission(row), nil
@@ -74,7 +75,7 @@ func (r *permissionRepository) GetByName(ctx context.Context, name string) (Perm
 func (r *permissionRepository) List(ctx context.Context) ([]Permission, error) {
 	rows, err := r.q.ListPermissions(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("PermissionRepository.List: %w", mapError(err))
+		return nil, fmt.Errorf("PermissionRepository.List: %w", helpers.MapError(err))
 	}
 
 	permissions := make([]Permission, len(rows))
@@ -93,7 +94,7 @@ func (r *permissionRepository) List(ctx context.Context) ([]Permission, error) {
 func (r *permissionRepository) ListByRole(ctx context.Context, roleID uuid.UUID) ([]Permission, error) {
 	rows, err := r.q.ListPermissionsByRole(ctx, roleID)
 	if err != nil {
-		return nil, fmt.Errorf("PermissionRepository.ListByRole: %w", mapError(err))
+		return nil, fmt.Errorf("PermissionRepository.ListByRole: %w", helpers.MapError(err))
 	}
 
 	permissions := make([]Permission, len(rows))
@@ -111,11 +112,11 @@ func (r *permissionRepository) ListByRole(ctx context.Context, roleID uuid.UUID)
 func (r *permissionRepository) Create(ctx context.Context, name, description string) (Permission, error) {
 	row, err := r.q.CreatePermission(ctx, &generated.CreatePermissionParams{
 		Name:        name,
-		Description: pgxText(description),
+		Description: helpers.PgxText(description),
 	})
 
 	if err != nil {
-		return Permission{}, fmt.Errorf("PermissionRepository.Create: %w", mapError(err))
+		return Permission{}, fmt.Errorf("PermissionRepository.Create: %w", helpers.MapError(err))
 	}
 
 	return toPermission(row), nil
@@ -125,7 +126,7 @@ func (r *permissionRepository) Create(ctx context.Context, name, description str
 // Returns ErrNotFound if the permission does not exist.
 func (r *permissionRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	if err := r.q.DeletePermission(ctx, id); err != nil {
-		return fmt.Errorf("PermissionRepository.Delete: %w", mapError(err))
+		return fmt.Errorf("PermissionRepository.Delete: %w", helpers.MapError(err))
 	}
 
 	return nil

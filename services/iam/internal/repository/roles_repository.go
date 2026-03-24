@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"github.com/araujoarthur/intranetbackend/services/iam/internal/repository/sqlc/generated"
+	"github.com/araujoarthur/intranetbackend/shared/pkg/helpers"
 	"github.com/google/uuid"
 )
 
@@ -46,7 +47,6 @@ type roleRepository struct {
 	q *generated.Queries
 }
 
-
 //--------------------------
 // Concrete Implementations
 // -------------------------
@@ -56,7 +56,7 @@ type roleRepository struct {
 func (r *roleRepository) GetByID(ctx context.Context, id uuid.UUID) (Role, error) {
 	row, err := r.q.GetRoleByID(ctx, id)
 	if err != nil {
-		return Role{}, fmt.Errorf("RoleRepository.GetByID: %w", mapError(err))
+		return Role{}, fmt.Errorf("RoleRepository.GetByID: %w", helpers.MapError(err))
 	}
 
 	return toRole(row), nil
@@ -67,7 +67,7 @@ func (r *roleRepository) GetByID(ctx context.Context, id uuid.UUID) (Role, error
 func (r *roleRepository) GetByName(ctx context.Context, name string) (Role, error) {
 	row, err := r.q.GetRoleByName(ctx, name)
 	if err != nil {
-		return Role{}, fmt.Errorf("RoleRepository.GetByName: %w", mapError(err))
+		return Role{}, fmt.Errorf("RoleRepository.GetByName: %w", helpers.MapError(err))
 	}
 
 	return toRole(row), nil
@@ -78,7 +78,7 @@ func (r *roleRepository) GetByName(ctx context.Context, name string) (Role, erro
 func (r *roleRepository) List(ctx context.Context) ([]Role, error) {
 	rows, err := r.q.ListRoles(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("RoleRepository.List: %w", mapError(err))
+		return nil, fmt.Errorf("RoleRepository.List: %w", helpers.MapError(err))
 	}
 
 	roles := make([]Role, len(rows))
@@ -96,12 +96,12 @@ func (r *roleRepository) List(ctx context.Context) ([]Role, error) {
 func (r *roleRepository) Create(ctx context.Context, name, description string, isSystem bool) (Role, error) {
 	row, err := r.q.CreateRole(ctx, &generated.CreateRoleParams{
 		Name:        name,
-		Description: pgxText(description),
+		Description: helpers.PgxText(description),
 		IsSystem:    isSystem,
 	})
 
 	if err != nil {
-		return Role{}, fmt.Errorf("RoleRepository.Create: %w", mapError(err))
+		return Role{}, fmt.Errorf("RoleRepository.Create: %w", helpers.MapError(err))
 	}
 
 	return toRole(row), nil
@@ -114,11 +114,11 @@ func (r *roleRepository) Update(ctx context.Context, id uuid.UUID, name, descrip
 	row, err := r.q.UpdateRole(ctx, &generated.UpdateRoleParams{
 		ID:          id,
 		Name:        name,
-		Description: pgxText(description),
+		Description: helpers.PgxText(description),
 	})
 
 	if err != nil {
-		return Role{}, fmt.Errorf("RoleRepository.Update: %w", mapError(err))
+		return Role{}, fmt.Errorf("RoleRepository.Update: %w", helpers.MapError(err))
 	}
 
 	return toRole(row), nil
@@ -129,7 +129,7 @@ func (r *roleRepository) Update(ctx context.Context, id uuid.UUID, name, descrip
 // System roles cannot be deleted and the query will return ErrNotFound for them.
 func (r *roleRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	if err := r.q.DeleteRole(ctx, id); err != nil {
-		return fmt.Errorf("RoleRepository.Delete: %w", mapError(err))
+		return fmt.Errorf("RoleRepository.Delete: %w", helpers.MapError(err))
 	}
 
 	return nil
