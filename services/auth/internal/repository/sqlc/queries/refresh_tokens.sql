@@ -30,3 +30,11 @@ AND   revoked_at  IS NULL;
 -- name: DeleteExpiredRefreshTokens :exec
 DELETE FROM auth.refresh_tokens
 WHERE expires_at < now();
+
+-- name: DeleteAllRefreshTokensByIdentity :exec
+DELETE FROM auth.refresh_tokens
+WHERE identity_id = $1;
+
+-- name: GetRefreshTokenByID :one
+SELECT * FROM auth.refresh_tokens
+WHERE id = $1;

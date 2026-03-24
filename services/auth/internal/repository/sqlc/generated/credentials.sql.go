@@ -65,6 +65,26 @@ func (q *Queries) DeleteCredentialsByIdentity(ctx context.Context, identityID uu
 	return err
 }
 
+const getCredentialByID = `-- name: GetCredentialByID :one
+SELECT id, identity_id, type, identifier, secret_hash, created_at, last_used_at FROM auth.credentials
+WHERE id = $1
+`
+
+func (q *Queries) GetCredentialByID(ctx context.Context, id uuid.UUID) (*AuthCredential, error) {
+	row := q.db.QueryRow(ctx, getCredentialByID, id)
+	var i AuthCredential
+	err := row.Scan(
+		&i.ID,
+		&i.IdentityID,
+		&i.Type,
+		&i.Identifier,
+		&i.SecretHash,
+		&i.CreatedAt,
+		&i.LastUsedAt,
+	)
+	return &i, err
+}
+
 const getCredentialByIdentityAndType = `-- name: GetCredentialByIdentityAndType :one
 SELECT id, identity_id, type, identifier, secret_hash, created_at, last_used_at FROM auth.credentials
 WHERE identity_id = $1

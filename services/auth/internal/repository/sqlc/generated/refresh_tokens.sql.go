@@ -38,6 +38,16 @@ func (q *Queries) CreateRefreshToken(ctx context.Context, arg *CreateRefreshToke
 	return &i, err
 }
 
+const deleteAllRefreshTokensByIdentity = `-- name: DeleteAllRefreshTokensByIdentity :exec
+DELETE FROM auth.refresh_tokens
+WHERE identity_id = $1
+`
+
+func (q *Queries) DeleteAllRefreshTokensByIdentity(ctx context.Context, identityID uuid.UUID) error {
+	_, err := q.db.Exec(ctx, deleteAllRefreshTokensByIdentity, identityID)
+	return err
+}
+
 const deleteExpiredRefreshTokens = `-- name: DeleteExpiredRefreshTokens :exec
 DELETE FROM auth.refresh_tokens
 WHERE expires_at < now()
@@ -92,6 +102,25 @@ AND   expires_at > now()
 
 func (q *Queries) GetRefreshTokenByHash(ctx context.Context, tokenHash string) (*AuthRefreshToken, error) {
 	row := q.db.QueryRow(ctx, getRefreshTokenByHash, tokenHash)
+	var i AuthRefreshToken
+	err := row.Scan(
+		&i.ID,
+		&i.IdentityID,
+		&i.TokenHash,
+		&i.ExpiresAt,
+		&i.RevokedAt,
+		&i.CreatedAt,
+	)
+	return &i, err
+}
+
+const getRefreshTokenByID = `-- name: GetRefreshTokenByID :one
+SELECT id, identity_id, token_hash, expires_at, revoked_at, created_at FROM auth.refresh_tokens
+WHERE id = $1
+`
+
+func (q *Queries) GetRefreshTokenByID(ctx context.Context, id uuid.UUID) (*AuthRefreshToken, error) {
+	row := q.db.QueryRow(ctx, getRefreshTokenByID, id)
 	var i AuthRefreshToken
 	err := row.Scan(
 		&i.ID,

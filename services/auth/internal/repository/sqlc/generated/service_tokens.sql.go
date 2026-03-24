@@ -54,6 +54,24 @@ func (q *Queries) GetActiveServiceTokenByIdentity(ctx context.Context, identityI
 	return &i, err
 }
 
+const getServiceTokenByID = `-- name: GetServiceTokenByID :one
+SELECT id, identity_id, token, issued_at, revoked_at FROM auth.service_tokens
+WHERE id = $1
+`
+
+func (q *Queries) GetServiceTokenByID(ctx context.Context, id uuid.UUID) (*AuthServiceToken, error) {
+	row := q.db.QueryRow(ctx, getServiceTokenByID, id)
+	var i AuthServiceToken
+	err := row.Scan(
+		&i.ID,
+		&i.IdentityID,
+		&i.Token,
+		&i.IssuedAt,
+		&i.RevokedAt,
+	)
+	return &i, err
+}
+
 const getServiceTokenByToken = `-- name: GetServiceTokenByToken :one
 SELECT id, identity_id, token, issued_at, revoked_at FROM auth.service_tokens
 WHERE token      = $1

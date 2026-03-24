@@ -34,3 +34,7 @@ WHERE id = $1;
 -- name: DeleteCredentialsByIdentity :exec
 DELETE FROM auth.credentials
 WHERE identity_id = $1;
+
+-- name: GetCredentialByID :one
+SELECT * FROM auth.credentials
+WHERE id = $1;

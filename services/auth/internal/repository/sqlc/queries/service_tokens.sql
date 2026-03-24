@@ -28,3 +28,7 @@ AND   revoked_at  IS NULL;
 SELECT * FROM auth.service_tokens
 WHERE revoked_at IS NULL
 ORDER BY issued_at DESC;
+
+-- name: GetServiceTokenByID :one
+SELECT * FROM auth.service_tokens
+WHERE id = $1;
