@@ -4,8 +4,10 @@ package repository
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/araujoarthur/intranetbackend/services/auth/internal/repository/sqlc/generated"
+	"github.com/araujoarthur/intranetbackend/shared/pkg/helpers"
 	"github.com/google/uuid"
 )
 
@@ -56,4 +58,102 @@ type CredentialRepository interface {
 // Instantiated exclusively by NewStore — never directly.
 type credentialRepository struct {
 	q *generated.Queries
+}
+
+func (r *credentialRepository) Create(ctx context.Context, identityID uuid.UUID, credentialType CredentialType, identifier string, secretHash string) (Credential, error) {
+	row, err := r.q.CreateCredential(ctx, &generated.CreateCredentialParams{
+		IdentityID: identityID,
+		Type:       generated.AuthCredentialType(credentialType),
+		Identifier: helpers.PgxText(identifier),
+		SecretHash: helpers.PgxText(secretHash),
+	})
+
+	if err != nil {
+		return Credential{}, fmt.Errorf("CredentialRepository.Create: %w", helpers.MapError(err))
+	}
+
+	return toCredential(row), nil
+}
+
+func (r *credentialRepository) GetByID(ctx context.Context, credentialID uuid.UUID) (Credential, error) {
+	row, err := r.q.GetCredentialByID(ctx, credentialID)
+	if err != nil {
+		return Credential{}, fmt.Errorf("CredentialRepository.GetByID: %w", helpers.MapError(err))
+	}
+
+	return toCredential(row), nil
+}
+
+func (r *credentialRepository) GetByTypeAndIdentifier(ctx context.Context, credentialType CredentialType, identifier string) (Credential, error) {
+	row, err := r.q.GetCredentialByTypeAndIdentifier(ctx, &generated.GetCredentialByTypeAndIdentifierParams{
+		Type:       generated.AuthCredentialType(credentialType),
+		Identifier: helpers.PgxText(identifier),
+	})
+	if err != nil {
+		return Credential{}, fmt.Errorf("CredentialRepository.GetByTypeAndIdentifier: %w", helpers.MapError(err))
+	}
+
+	return toCredential(row), nil
+}
+
+func (r *credentialRepository) GetByIdentity(ctx context.Context, identityID uuid.UUID) ([]Credential, error) {
+	rows, err := r.q.GetCredentialsByIdentity(ctx, identityID)
+	if err != nil {
+		return nil, fmt.Errorf("CredentialRepository.GetByIdentity: %w", helpers.MapError(err))
+	}
+
+	res := make([]Credential, len(rows))
+	for i, credential := range rows {
+		res[i] = toCredential(credential)
+	}
+
+	return res, nil
+}
+
+func (r *credentialRepository) GetByIdentityAndType(ctx context.Context, identityID uuid.UUID, credentialType CredentialType) (Credential, error) {
+	row, err := r.q.GetCredentialByIdentityAndType(ctx, &generated.GetCredentialByIdentityAndTypeParams{
+		IdentityID: identityID,
+		Type:       generated.AuthCredentialType(credentialType),
+	})
+
+	if err != nil {
+		return Credential{}, fmt.Errorf("CredentialRepository.GetByIdentityAndType: %w", helpers.MapError(err))
+	}
+
+	return toCredential(row), nil
+}
+
+func (r *credentialRepository) UpdateLastUsed(ctx context.Context, credentialID uuid.UUID) error {
+	if err := r.q.UpdateCredentialLastUsed(ctx, credentialID); err != nil {
+		return fmt.Errorf("CredentialRepository.UpdateLastUsed: %w", helpers.MapError(err))
+	}
+
+	return nil
+}
+
+func (r *credentialRepository) UpdateSecret(ctx context.Context, credentialID uuid.UUID, secretHash string) error {
+	if err := r.q.UpdateCredentialSecret(ctx, &generated.UpdateCredentialSecretParams{
+		ID:         credentialID,
+		SecretHash: helpers.PgxText(secretHash),
+	}); err != nil {
+		return fmt.Errorf("CredentialRepository.UpdateSecret: %w", helpers.MapError(err))
+	}
+
+	return nil
+}
+
+func (r *credentialRepository) Delete(ctx context.Context, credentialID uuid.UUID) error {
+	if err := r.q.DeleteCredential(ctx, credentialID); err != nil {
+		return fmt.Errorf("CredentialRepository.Delete: %w", helpers.MapError(err))
+	}
+
+	return nil
+}
+
+func (r *credentialRepository) DeleteByIdentity(ctx context.Context, identityID uuid.UUID) error {
+	if err := r.q.DeleteCredentialsByIdentity(ctx, identityID); err != nil {
+		return fmt.Errorf("CredentialRepository.DeleteByIdentity: %w", helpers.MapError(err))
+	}
+
+	return nil
 }

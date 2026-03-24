@@ -1,9 +1,13 @@
+// identity_repository.go implements IdentityRepository, providing data access
+// for auth identities backed by PostgreSQL via sqlc-generated queries.
 package repository
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/araujoarthur/intranetbackend/services/auth/internal/repository/sqlc/generated"
+	"github.com/araujoarthur/intranetbackend/shared/pkg/helpers"
 	"github.com/google/uuid"
 )
 
@@ -31,4 +35,30 @@ type IdentityRepository interface {
 // Instantiated exclusively by NewStore — never directly.
 type identityRepository struct {
 	q *generated.Queries
+}
+
+func (r *identityRepository) Create(ctx context.Context) (Identity, error) {
+	row, err := r.q.CreateIdentity(ctx)
+	if err != nil {
+		return Identity{}, fmt.Errorf("IdentityRepository.Create: %w", helpers.MapError(err))
+	}
+
+	return toIdentity(row), nil
+}
+
+func (r *identityRepository) GetByID(ctx context.Context, id uuid.UUID) (Identity, error) {
+	row, err := r.q.GetIdentityByID(ctx, id)
+	if err != nil {
+		return Identity{}, fmt.Errorf("IdentityRepository.GetByID: %w", helpers.MapError(err))
+	}
+
+	return toIdentity(row), nil
+}
+
+func (r *identityRepository) Delete(ctx context.Context, id uuid.UUID) error {
+	if err := r.q.DeleteIdentity(ctx, id); err != nil {
+		return fmt.Errorf("IdentityRepository.Delete: %w", helpers.MapError(err))
+	}
+
+	return nil
 }

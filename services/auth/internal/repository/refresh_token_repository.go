@@ -4,9 +4,11 @@ package repository
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/araujoarthur/intranetbackend/services/auth/internal/repository/sqlc/generated"
+	"github.com/araujoarthur/intranetbackend/shared/pkg/helpers"
 	"github.com/google/uuid"
 )
 
@@ -53,4 +55,81 @@ type RefreshTokenRepository interface {
 // Instantiated exclusively by NewStore — never directly.
 type refreshTokenRepository struct {
 	q *generated.Queries
+}
+
+func (r *refreshTokenRepository) Create(ctx context.Context, identityID uuid.UUID, tokenHash string, expiresAt time.Time) (RefreshToken, error) {
+	row, err := r.q.CreateRefreshToken(ctx, &generated.CreateRefreshTokenParams{
+		IdentityID: identityID,
+		TokenHash:  tokenHash,
+		ExpiresAt:  expiresAt,
+	})
+	if err != nil {
+		return RefreshToken{}, fmt.Errorf("RefreshTokenRepository.Create: %w", helpers.MapError(err))
+	}
+
+	return toRefreshToken(row), nil
+}
+
+func (r *refreshTokenRepository) GetByID(ctx context.Context, tokenID uuid.UUID) (RefreshToken, error) {
+	row, err := r.q.GetRefreshTokenByID(ctx, tokenID)
+	if err != nil {
+		return RefreshToken{}, fmt.Errorf("RefreshTokenRepository.GetByID: %w", helpers.MapError(err))
+	}
+
+	return toRefreshToken(row), nil
+}
+
+func (r *refreshTokenRepository) GetByHash(ctx context.Context, tokenHash string) (RefreshToken, error) {
+	row, err := r.q.GetRefreshTokenByHash(ctx, tokenHash)
+	if err != nil {
+		return RefreshToken{}, fmt.Errorf("RefreshTokenRepository.GetByHash: %w", helpers.MapError(err))
+	}
+
+	return toRefreshToken(row), nil
+}
+
+func (r *refreshTokenRepository) GetActiveByIdentity(ctx context.Context, identityID uuid.UUID) ([]RefreshToken, error) {
+	rows, err := r.q.GetActiveRefreshTokensByIdentity(ctx, identityID)
+	if err != nil {
+		return nil, fmt.Errorf("RefreshTokenRepository.GetActiveByIdentity: %w", helpers.MapError(err))
+	}
+
+	refreshTokens := make([]RefreshToken, len(rows))
+	for i, token := range rows {
+		refreshTokens[i] = toRefreshToken(token)
+	}
+
+	return refreshTokens, nil
+}
+
+func (r *refreshTokenRepository) Revoke(ctx context.Context, tokenID uuid.UUID) error {
+	if err := r.q.RevokeRefreshToken(ctx, tokenID); err != nil {
+		return fmt.Errorf("RefreshTokenRepository.Revoke: %w", helpers.MapError(err))
+	}
+
+	return nil
+}
+
+func (r *refreshTokenRepository) RevokeAllByIdentity(ctx context.Context, identityID uuid.UUID) error {
+	if err := r.q.RevokeAllRefreshTokensByIdentity(ctx, identityID); err != nil {
+		return fmt.Errorf("RefreshTokenRepository.RevokeAllByIdentity: %w", helpers.MapError(err))
+	}
+
+	return nil
+}
+
+func (r *refreshTokenRepository) DeleteAllExpired(ctx context.Context) error {
+	if err := r.q.DeleteExpiredRefreshTokens(ctx); err != nil {
+		return fmt.Errorf("RefreshTokenRepository.DeleteAllExpired: %w", helpers.MapError(err))
+	}
+
+	return nil
+}
+
+func (r *refreshTokenRepository) DeleteAllByIdentity(ctx context.Context, identityID uuid.UUID) error {
+	if err := r.q.DeleteAllRefreshTokensByIdentity(ctx, identityID); err != nil {
+		return fmt.Errorf("RefreshTokenRepository.DeleteAllByIdentity: %w", helpers.MapError(err))
+	}
+
+	return nil
 }
