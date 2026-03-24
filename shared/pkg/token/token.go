@@ -12,8 +12,7 @@ import (
 )
 
 const (
-	UserTokenDuration    = 15 * time.Minute
-	ServiceTokenDuration = 24 * time.Hour
+	UserTokenDuration = 15 * time.Minute
 )
 
 // Sentinel Errors
@@ -35,23 +34,26 @@ type jwtClaims struct {
 }
 
 // Issue signs and returns a JWT token for the given claims using RS256.
-// The token duration is determined by the PrincipalType:
-// users get 15 minutes, service accounts get 24 hours.
-// Should only be called by the auth service or inetctl.
+// User tokens expire after 15 minutes.
+// Service tokens are non-expiring — their validity is controlled by
+// the auth service via revocation rather than token expiry.
+// Should only be called by the auth service or inetbctl.
 func Issue(claims Claims, privateKey *rsa.PrivateKey) (string, error) {
-	duration := UserTokenDuration
-	if claims.PrincipalType == types.PrincipalTypeService {
-		duration = ServiceTokenDuration
+	now := time.Now()
+
+	registered := jwt.RegisteredClaims{
+		Subject:  claims.Subject.String(),
+		IssuedAt: jwt.NewNumericDate(now),
 	}
 
-	now := time.Now()
+	// only user tokens expire — service tokens are controlled via revocation
+	if claims.PrincipalType == types.PrincipalTypeUser {
+		registered.ExpiresAt = jwt.NewNumericDate(now.Add(UserTokenDuration))
+	}
+
 	token := jwt.NewWithClaims(jwt.SigningMethodRS256, jwtClaims{
-		RegisteredClaims: jwt.RegisteredClaims{
-			Subject:   claims.Subject.String(),
-			IssuedAt:  jwt.NewNumericDate(now),
-			ExpiresAt: jwt.NewNumericDate(now.Add(duration)),
-		},
-		PrincipalType: claims.PrincipalType,
+		RegisteredClaims: registered,
+		PrincipalType:    claims.PrincipalType,
 	})
 
 	signed, err := token.SignedString(privateKey)
@@ -79,7 +81,6 @@ func Parse(tokenString string, publicKey *rsa.PublicKey) (Claims, error) {
 			}
 			return publicKey, nil
 		},
-		jwt.WithExpirationRequired(),
 		jwt.WithIssuedAt(),
 		jwt.WithLeeway(5*time.Second), // if two services have slightly different system clocks, a token that expired 2 seconds ago on one machine might still be valid on another. 5 seconds is a safe margin.
 	)
