@@ -10,7 +10,7 @@ Interfaces:
   PublicKeyProvider    satisfied by any service that validates tokens
                        exposes PublicKey() (*rsa.PublicKey, error)
 
-  PrivateKeyProvider   satisfied only by the auth service and mgctl
+  PrivateKeyProvider   satisfied only by the auth service and inetbctl
                        extends PublicKeyProvider with PrivateKey() (*rsa.PrivateKey, error)
 
 Implementations:

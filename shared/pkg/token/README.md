@@ -16,7 +16,7 @@ Token format:
 
 Token durations:
   User tokens        15 minutes — refreshed via auth service refresh token flow
-  Service tokens     24 hours   — rotated via inetbctl token rotate
+  Service tokens     non-expiring   — rotated daily by auth or manually via inetbctl token rotate
 
 Authentication model:
   Internal services only accept service tokens in the Authorization header.
