@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/araujoarthur/intranetbackend/services/iam/internal/repository"
+	"github.com/araujoarthur/intranetbackend/shared/pkg/apierror"
 	"github.com/google/uuid"
 )
 
@@ -64,7 +65,7 @@ func (s *principalRoleService) Assign(ctx context.Context, callerID uuid.UUID, p
 	}
 
 	if !allowed {
-		return repository.ErrForbidden
+		return apierror.ErrForbidden
 	}
 
 	_, err = s.store.PrincipalRoles.Assign(ctx, principalID, roleID, callerID)
@@ -89,7 +90,7 @@ func (s *principalRoleService) Remove(ctx context.Context, callerID uuid.UUID, p
 		}
 
 		if !allowed {
-			return repository.ErrForbidden
+			return apierror.ErrForbidden
 		}
 	}
 

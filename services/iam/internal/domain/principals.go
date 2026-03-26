@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/araujoarthur/intranetbackend/services/iam/internal/repository"
+	"github.com/araujoarthur/intranetbackend/shared/pkg/apierror"
 	"github.com/google/uuid"
 )
 
@@ -78,7 +79,7 @@ func (s *principalService) Delete(ctx context.Context, callerID uuid.UUID, id uu
 	}
 
 	if !allowed {
-		return repository.ErrForbidden
+		return apierror.ErrForbidden
 	}
 
 	if err := s.store.Principals.Delete(ctx, id); err != nil {
@@ -95,7 +96,7 @@ func (s *principalService) Activate(ctx context.Context, callerID uuid.UUID, id 
 	}
 
 	if !allowed {
-		return repository.Principal{}, repository.ErrForbidden
+		return repository.Principal{}, apierror.ErrForbidden
 	}
 
 	principal, err := s.store.Principals.Activate(ctx, id)
@@ -113,7 +114,7 @@ func (s *principalService) Deactivate(ctx context.Context, callerID uuid.UUID, i
 	}
 
 	if !allowed {
-		return repository.Principal{}, repository.ErrForbidden
+		return repository.Principal{}, apierror.ErrForbidden
 	}
 
 	principal, err := s.store.Principals.Deactivate(ctx, id)

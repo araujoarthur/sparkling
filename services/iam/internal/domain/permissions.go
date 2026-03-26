@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"github.com/araujoarthur/intranetbackend/services/iam/internal/repository"
+	"github.com/araujoarthur/intranetbackend/shared/pkg/apierror"
 	"github.com/google/uuid"
 )
 
@@ -62,7 +63,7 @@ func (s *permissionService) Create(ctx context.Context, callerID uuid.UUID, name
 	}
 
 	if !allowed {
-		return repository.Permission{}, repository.ErrForbidden
+		return repository.Permission{}, apierror.ErrForbidden
 	}
 
 	if err := validatePermissionName(name); err != nil {
@@ -84,7 +85,7 @@ func (s *permissionService) Delete(ctx context.Context, callerID uuid.UUID, id u
 	}
 
 	if !allowed {
-		return repository.ErrForbidden
+		return apierror.ErrForbidden
 	}
 
 	err = s.store.Permissions.Delete(ctx, id)

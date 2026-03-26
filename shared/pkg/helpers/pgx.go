@@ -2,6 +2,7 @@ package helpers
 
 import (
 	"errors"
+	"time"
 
 	"github.com/araujoarthur/intranetbackend/shared/pkg/apierror"
 	"github.com/jackc/pgx/v5"
@@ -40,4 +41,16 @@ func MapError(err error) error {
 	}
 
 	return err
+}
+
+// FromNullableTime converts a pgtype.Timestamptz into a *time.Time.
+// Returns nil if the value is not valid (i.e. the column is NULL in the database).
+// Use this in repository mappers when converting nullable timestamptz columns
+// into domain types.
+func FromNullableTime(t pgtype.Timestamptz) *time.Time {
+	if !t.Valid {
+		return nil
+	}
+
+	return &t.Time
 }

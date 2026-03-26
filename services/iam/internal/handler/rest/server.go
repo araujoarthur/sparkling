@@ -66,6 +66,7 @@ func (s *Server) registerRoutes() {
 
 		// all routes below require a valid service token
 		r.Group(func(r chi.Router) {
+			r.Post("/", s.createPrincipal)
 			r.Use(token.Middleware(s.publicKey))
 
 			r.Route("/roles", func(r chi.Router) {

@@ -15,3 +15,10 @@ type PrincipalResponse struct {
 	CreatedAt     time.Time           `json:"created_at"`
 	UpdatedAt     time.Time           `json:"updated_at"`
 }
+
+// CreatePrincipalRequest is the request body for POST /api/v1/principals.
+// Called by the auth service when a new identity is registered.
+type CreatePrincipalRequest struct {
+	ExternalID    uuid.UUID           `json:"external_id"`
+	PrincipalType types.PrincipalType `json:"principal_type"`
+}

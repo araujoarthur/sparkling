@@ -11,6 +11,22 @@ import (
 	"github.com/araujoarthur/intranetbackend/shared/pkg/types"
 )
 
+func (s *Server) createPrincipal(w http.ResponseWriter, r *http.Request) {
+	var req contract.CreatePrincipalRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		response.Error(w, apierror.ErrInvalidArgument, "invalid request body")
+		return
+	}
+
+	principal, err := s.principals.Create(r.Context(), req.ExternalID, req.PrincipalType)
+	if err != nil {
+		response.Error(w, err, "failed to create principal")
+		return
+	}
+
+	response.JSON(w, http.StatusCreated, toPrincipalResponse(principal))
+}
+
 func (s *Server) listPrincipals(w http.ResponseWriter, r *http.Request) {
 	list, err := s.principals.List(r.Context())
 	if err != nil {

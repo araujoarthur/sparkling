@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/araujoarthur/intranetbackend/services/iam/internal/repository"
+	"github.com/araujoarthur/intranetbackend/shared/pkg/apierror"
 	"github.com/google/uuid"
 )
 
@@ -49,7 +50,7 @@ func (s *roleService) Create(ctx context.Context, callerID uuid.UUID, name, desc
 	}
 
 	if !allowed {
-		return repository.Role{}, repository.ErrForbidden
+		return repository.Role{}, apierror.ErrForbidden
 	}
 
 	if err := validateRoleName(name); err != nil {
@@ -96,7 +97,7 @@ func (s *roleService) Delete(ctx context.Context, callerID uuid.UUID, id uuid.UU
 	}
 
 	if !allowed {
-		return repository.ErrForbidden
+		return apierror.ErrForbidden
 	}
 
 	// fetch role first to get its name for the grant permission lookup
@@ -141,7 +142,7 @@ func (s *roleService) Update(ctx context.Context, callerID uuid.UUID, id uuid.UU
 	}
 
 	if !allowed {
-		return repository.Role{}, repository.ErrForbidden
+		return repository.Role{}, apierror.ErrForbidden
 	}
 
 	err = validateRoleName(name)
