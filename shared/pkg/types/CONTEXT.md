@@ -32,10 +32,10 @@ Represents the kind of entity that can be assigned roles in the IAM system.
 ## Why This Package Exists
 
 Several packages need `PrincipalType`:
-- `shared/pkg/provisioner` — `Provision(ctx, id, PrincipalType)`
 - `shared/pkg/token` — `Claims.PrincipalType`
 - `services/iam/repository` — principal records store `PrincipalType`
-- `services/iam/client` — passes `PrincipalType` when provisioning
+- `services/iam/client` — `IAMClient.Provision(ctx, id, PrincipalType)`
+- `services/auth/internal/domain` — passes `PrincipalType` during registration
 
 If `PrincipalType` were defined in `token` or `provisioner`, those packages would create circular imports. Placing it here — a package with no dependencies — breaks all cycles.
 

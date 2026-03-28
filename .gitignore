@@ -3,3 +3,4 @@ setup.sql
 *.exe
 *.pem
 bin/
+.insights/
