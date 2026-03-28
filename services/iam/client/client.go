@@ -78,7 +78,7 @@ func (c *Client) do(ctx context.Context, method, path string, body any, actingPr
 }
 
 // Provision creates an IAM principal for the given external identity.
-// Implements provisioner.PrincipalProvisioner.
+// Implements iamclient.IAMClient.
 func (c *Client) Provision(ctx context.Context, externalID uuid.UUID, principalType types.PrincipalType) error {
 	resp, err := c.do(ctx, http.MethodPost, "/api/v1/principals", contract.CreatePrincipalRequest{
 		ExternalID:    externalID,

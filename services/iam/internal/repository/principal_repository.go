@@ -140,7 +140,7 @@ func (r *principalRepository) Activate(ctx context.Context, id uuid.UUID) (Princ
 func (r *principalRepository) Deactivate(ctx context.Context, id uuid.UUID) (Principal, error) {
 	row, err := r.q.DeactivatePrincipal(ctx, id)
 	if err != nil {
-		return Principal{}, fmt.Errorf("PrincipalRepository.Activate: %w", helpers.MapError(err))
+		return Principal{}, fmt.Errorf("PrincipalRepository.Deactivate: %w", helpers.MapError(err))
 	}
 
 	return toPrincipal(row), nil

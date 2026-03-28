@@ -106,11 +106,16 @@ func Parse(tokenString string, publicKey *rsa.PublicKey) (Claims, error) {
 		return Claims{}, fmt.Errorf("Parse [subject]: %w", err)
 	}
 
+	var expiresAt time.Time
+	if parsed.ExpiresAt != nil {
+		expiresAt = parsed.ExpiresAt.Time
+	}
+
 	// map the internal jwtClaims back into the domain Claims struct.
 	return Claims{
 		Subject:       subject,
 		PrincipalType: parsed.PrincipalType,
 		IssuedAt:      parsed.IssuedAt.Time,
-		ExpiresAt:     parsed.ExpiresAt.Time,
+		ExpiresAt:     expiresAt,
 	}, nil
 }
