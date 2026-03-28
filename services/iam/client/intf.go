@@ -1,8 +1,4 @@
-// provisioner.go defines the PrincipalProvisioner interface used by the auth
-// service to create IAM principals for newly registered identities.
-// The default implementation calls IAM directly.
-// A future implementation may enqueue a message for async processing.
-package provisioner
+package iamclient
 
 import (
 	"context"
@@ -16,10 +12,14 @@ import (
 // The default implementation calls IAM directly (eager provisioning).
 // A future implementation may enqueue a message for async processing
 // (eventual consistency) without any changes to the auth domain layer.
-type PrincipalProvisioner interface {
+type IAMClient interface {
 	// Provision creates an IAM principal for the given external identity.
 	// externalID is the identity ID issued by the auth service.
 	// A failure here is non-fatal — the auth service logs the error and
 	// continues. A reconciliation job handles unprovisioned identities.
 	Provision(ctx context.Context, externalID uuid.UUID, principalType types.PrincipalType) error
+
+	// HasPermission returns true if the principal holds the given permission.
+	HasPermission(ctx context.Context, principalID uuid.UUID, permission string) (bool, error)
 }
+

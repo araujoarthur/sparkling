@@ -211,3 +211,23 @@ func (s *Server) removeRoleFromPrincipal(w http.ResponseWriter, r *http.Request)
 
 	w.WriteHeader(http.StatusNoContent)
 }
+
+func (s *Server) getPrincipalPermissions(w http.ResponseWriter, r *http.Request) {
+	parsed, ok := parseUUIDParam(w, r, "id")
+	if !ok {
+		return
+	}
+
+	list, err := s.principals.GetPermissions(r.Context(), parsed)
+	if err != nil {
+		response.Error(w, err, "failed to get principal permissions")
+		return
+	}
+
+	res := make([]contract.PermissionResponse, len(list))
+	for i, p := range list {
+		res[i] = toPermissionResponse(p)
+	}
+
+	response.JSON(w, http.StatusOK, res)
+}

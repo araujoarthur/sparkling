@@ -12,12 +12,11 @@ The auth service is the single source of truth for identity and credential manag
 services/auth/
 ├── internal/
 │   ├── domain/
-│   │   ├── auth_domain.go      shared domain helpers (generateToken)
-│   │   ├── session.go          SessionService interface (in progress)
-│   │   ├── identity.go         stub
-│   │   ├── credential.go       stub
-│   │   ├── refresh_token.go    stub
-│   │   └── service_token.go    stub
+│   │   ├── auth_domain.go      shared helpers (LoginResult, RefreshTokenDuration, generateToken, hashToken)
+│   │   ├── session.go          SessionService interface + full implementation
+│   │   ├── account.go          AccountService interface (not yet implemented)
+│   │   ├── refresh_token.go    placeholder (empty)
+│   │   └── service_token.go    placeholder (empty)
 │   └── repository/
 │       ├── auth_repository.go  domain types + mappers
 │       ├── store.go            Store — single entry point to all repos
@@ -35,7 +34,7 @@ services/auth/
 - Manage **credentials** — password (hashed) or service_token type, each linked to an identity
 - Issue **access tokens** (15 min, RS256 JWT) and **refresh tokens** (7-day expiry)
 - Issue and rotate **service tokens** (non-expiring JWTs; revocation-controlled)
-- Provision an IAM principal automatically when a new identity registers (via `provisioner.PrincipalProvisioner`)
+- Provision an IAM principal automatically when a new identity registers (via `iamclient.IAMClient`)
 - Run a daily background job to rotate service tokens
 
 ## Database Schema (`auth` schema)
@@ -123,26 +122,70 @@ store.ServiceTokens // ServiceTokenRepository
 | `RevokeAllByIdentity(ctx, identityID)` | Called before rotation |
 | `ListActive(ctx)` | All active tokens; used by rotation job |
 
-## Domain Layer (In Progress)
+---
 
-### `auth_domain.go`
+## Domain Layer
 
-`generateToken() (string, error)` — generates a 32-byte cryptographically secure random token encoded as base64 URL. Used for refresh tokens (only the hash is stored, not the raw token).
+### Shared Helpers (`auth_domain.go`)
 
-### `session.go` — `SessionService` interface
+**Types:**
+- `LoginResult` — `{ AccessToken string, RefreshToken string }` — returned by `Login` and `Refresh`
+
+**Constants:**
+- `RefreshTokenDuration = 7 * 24 * time.Hour` — used when storing refresh tokens
+
+**Functions:**
+- `generateToken() (string, error)` — 32 bytes from `crypto/rand`, base64url-encoded. Used for refresh tokens (only the SHA-256 hash is stored).
+- `hashToken(raw string) string` — SHA-256 hex digest of a raw token string.
+
+### SessionService (`session.go`)
 
 ```go
 type SessionService interface {
-    Register(ctx context.Context, username, password string) (repository.Identity, error)
+    Register(ctx, username, password string) (repository.Identity, error)
+    Login(ctx, username, password string) (LoginResult, error)
+    Refresh(ctx, rawRefreshToken string) (LoginResult, error)
+    Logout(ctx, rawRefreshToken string) error
+    LogoutAll(ctx, identityID uuid.UUID) error
 }
 ```
 
-Currently just the interface definition. Implementation stubs (`identity.go`, `credential.go`, `refresh_token.go`, `service_token.go`) are empty — the full domain layer is in progress.
+**Constructor:** `NewSessionService(store, hasher, provisioner, privateKey)`
+
+| Method | Behaviour |
+|---|---|
+| `Register` | Hashes password → creates identity + credential in a transaction → provisions IAM principal (non-fatal on failure) |
+| `Login` | Fetches credential by username → verifies password hash → issues access token + refresh token → stores hashed refresh token with 7-day expiry → updates `last_used_at` (non-fatal) → returns `LoginResult` |
+| `Refresh` | Hashes raw token → fetches by hash → issues new access token + new refresh token → stores new, revokes old in a transaction → returns `LoginResult` |
+| `Logout` | Hashes raw token → fetches by hash → revokes the token |
+| `LogoutAll` | Revokes all refresh tokens for the identity |
+
+**Error mapping:**
+- Unknown username → `apierror.ErrInvalidCredentials`
+- Wrong password → `apierror.ErrInvalidCredentials`
+- Unknown refresh token → `apierror.ErrInvalidCredentials`
+
+**Non-fatal side effects:**
+- IAM provisioning failure during `Register` — logged, not returned
+- `last_used_at` update failure during `Login` — logged, not returned
+
+### AccountService (`account.go`)
+
+```go
+type AccountService interface {
+    Delete(ctx, identityID uuid.UUID) error
+    ChangePassword(ctx, identityID uuid.UUID, oldPassword, newPassword string) error
+}
+```
+
+Interface only — no implementation yet. `Delete` cascades to credentials, refresh tokens, and service tokens. `ChangePassword` verifies the old password first and revokes all active refresh tokens.
+
+---
 
 ## Status
 
-- Repository layer: **complete** — all four repositories implemented via interface
-- Domain layer: **in progress** — `SessionService` interface defined, implementations are stubs
+- Repository layer: **complete** — all four repositories implemented
+- Domain layer: **mostly implemented** — `SessionService` fully working; `AccountService` interface defined, not implemented; `refresh_token.go` and `service_token.go` are empty placeholders
 - Handler layer: **not started**
 - `main.go`: **not started**
 
@@ -150,10 +193,11 @@ Currently just the interface definition. Implementation stubs (`identity.go`, `c
 
 | Package | Purpose |
 |---|---|
-| `shared/pkg/apierror` | Sentinel errors returned from repository |
+| `shared/pkg/apierror` | Sentinel errors returned from repository and domain |
 | `shared/pkg/helpers` | `MapError`, `PgxText`, `FromNullableTime` |
 | `shared/pkg/database` | `WithTx` via `store.WithTx` |
-| `shared/pkg/token` | `Issue` for signing JWTs (domain layer, when implemented) |
-| `shared/pkg/hasher` | Password hashing (domain layer, when implemented) |
-| `shared/pkg/provisioner` | `PrincipalProvisioner` (domain layer, when implemented) |
+| `shared/pkg/token` | `Issue` for signing access tokens (RS256) |
+| `shared/pkg/hasher` | Password hashing (`Argon2Hasher` / `BcryptHasher`) |
+| `shared/pkg/types` | `PrincipalType` constants |
+| `services/iam/client` | `IAMClient` interface — IAM principal provisioning |
 | `shared/pkg/keyprovider` | RSA key loading (main, when implemented) |

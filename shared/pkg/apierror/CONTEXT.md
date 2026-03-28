@@ -22,6 +22,7 @@ Defined with `errors.New`. Returned by repository and domain layers. Handlers ne
 | `ErrForbidden` | `"forbidden"` | 403 |
 | `ErrInvalidArgument` | `"invalid argument"` | 400 |
 | `ErrUnauthorized` | `"unauthorized"` | 401 |
+| `ErrInvalidCredentials` | `"invalid credentials"` | 401 |
 | `ErrInternal` | `"internal error"` | 500 |
 
 ## ErrorCode Type
@@ -35,6 +36,7 @@ Defined with `errors.New`. Returned by repository and domain layers. Handlers ne
 | `CodeForbidden` | `"FORBIDDEN"` |
 | `CodeInvalidArgument` | `"INVALID_ARGUMENT"` |
 | `CodeUnauthorized` | `"UNAUTHORIZED"` |
+| `CodeInvalidCredentials` | `"INVALID_CREDENTIALS"` |
 | `CodeInternal` | `"INTERNAL_ERROR"` |
 
 ## Functions

@@ -280,9 +280,25 @@ rest.NewServer(publicKey, roles, permissions, rolePermissions, principals, princ
 
 ---
 
-## Client Library (`client/client.go`)
+## Client Library (`client/`)
 
-Package `iamclient` provides an HTTP client that satisfies `provisioner.PrincipalProvisioner`.
+Package `iamclient` defines the `IAMClient` interface and provides an HTTP implementation (`Client`).
+
+### IAMClient Interface (`intf.go`)
+
+```go
+type IAMClient interface {
+    Provision(ctx context.Context, externalID uuid.UUID, principalType types.PrincipalType) error
+    HasPermission(ctx context.Context, principalID uuid.UUID, permission string) (bool, error)
+}
+```
+
+This interface replaces the former `shared/pkg/provisioner.PrincipalProvisioner`. It lives in the IAM client package so that consumers (e.g. auth service) depend on the interface without importing IAM internals.
+
+- `Provision` — creates an IAM principal for a newly registered identity. Non-fatal failure by contract.
+- `HasPermission` — checks whether a principal holds a given permission.
+
+### HTTP Implementation (`client.go`)
 
 **Constructor:** `iamclient.New(baseURL, token string) *Client`
 - `baseURL` — e.g. `"http://iam:8081"`
@@ -291,6 +307,8 @@ Package `iamclient` provides an HTTP client that satisfies `provisioner.Principa
 **Bug:** The HTTP client timeout is set with `10 & time.Second` (bitwise AND). Since `time.Second` is `1_000_000_000` and `10` is `0b1010`, the result is `0` — effectively no timeout. This should be `10 * time.Second`.
 
 **`Provision(ctx, externalID, principalType)`** — posts `{"external_id": "...", "principal_type": "..."}` to `POST /api/v1/principals`. Returns an error if the response status is not `201 Created`. Note: the server currently registers `createPrincipal` at `POST /api/v1/` — see the route mismatch note in the route table above.
+
+**`HasPermission`** — not yet implemented in `client.go`.
 
 All requests attach `Authorization: Bearer <token>` and `Content-Type: application/json`.
 

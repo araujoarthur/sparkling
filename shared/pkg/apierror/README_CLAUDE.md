@@ -24,6 +24,7 @@ Handlers never inspect raw `pgx` or database errors directly. All errors must be
 | `ErrForbidden`       | The caller lacks permission for the operation    |
 | `ErrInvalidArgument` | The request contains invalid or missing fields   |
 | `ErrUnauthorized`    | The caller has no valid identity                 |
+| `ErrInvalidCredentials` | The supplied credentials are wrong            |
 | `ErrInternal`        | An unexpected internal error occurred            |
 
 ## Error Codes
@@ -37,6 +38,7 @@ Handlers never inspect raw `pgx` or database errors directly. All errors must be
 | `CodeForbidden`       | `FORBIDDEN`        |
 | `CodeInvalidArgument` | `INVALID_ARGUMENT` |
 | `CodeUnauthorized`    | `UNAUTHORIZED`     |
+| `CodeInvalidCredentials` | `INVALID_CREDENTIALS` |
 | `CodeInternal`        | `INTERNAL_ERROR`   |
 
 ## Helper Functions
@@ -52,6 +54,7 @@ Maps a sentinel error to the appropriate HTTP status code. Unrecognized errors f
 | `ErrForbidden`       | `403 Forbidden`              |
 | `ErrInvalidArgument` | `400 Bad Request`            |
 | `ErrUnauthorized`    | `401 Unauthorized`           |
+| `ErrInvalidCredentials` | `401 Unauthorized`        |
 | anything else        | `500 Internal Server Error`  |
 
 ### `Code(err error) ErrorCode`

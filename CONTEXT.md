@@ -34,7 +34,6 @@ backendv2/
         ├── hasher/             # Password hashing (Argon2id / bcrypt)
         ├── helpers/            # pgx-level utilities and error mapper
         ├── keyprovider/        # RSA key loading (file, env, vault)
-        ├── provisioner/        # PrincipalProvisioner interface
         ├── response/           # HTTP response envelope helpers
         ├── token/              # JWT issuance, validation, middleware
         └── types/              # Shared type definitions (PrincipalType)
@@ -62,7 +61,7 @@ Single source of truth for identity and credential management. The **only** serv
 - `auth.refresh_tokens` — id, identity_id, token_hash, expires_at, revoked_at, created_at
 - `auth.service_tokens` — id, identity_id, token, issued_at, revoked_at
 
-**Status:** Full repository layer implemented. Domain and handler layers in progress.
+**Status:** Repository layer complete. Domain layer largely implemented — `SessionService` fully working (register, login, refresh, logout); `AccountService` interface defined but not yet implemented. Handler layer and `main.go` not started.
 
 ---
 
@@ -109,7 +108,7 @@ iam:role-{name}:grant    (one per role, auto-created)
 
 **Status:** Fully implemented — repository, domain, and handler layers complete.
 
-**Client library:** `services/iam/client` — HTTP client that satisfies the `provisioner.PrincipalProvisioner` interface; used by auth to create IAM principals on identity registration.
+**Client library:** `services/iam/client` — defines `IAMClient` interface (`Provision` + `HasPermission`) and its HTTP implementation (`Client`). Used by the auth service to create IAM principals on identity registration and to check permissions.
 
 ---
 
@@ -133,6 +132,7 @@ Single source of truth for error classification. No service should define its ow
 | `ErrForbidden` | 403 |
 | `ErrInvalidArgument` | 400 |
 | `ErrUnauthorized` | 401 |
+| `ErrInvalidCredentials` | 401 |
 | `ErrInternal` | 500 |
 
 **Functions:** `HTTPStatus(err) int`, `Code(err) ErrorCode`
@@ -210,20 +210,6 @@ Low-level pgx utilities:
 - `MapError(err)` — translates `pgx.ErrNoRows` → `apierror.ErrNotFound`, unique violation → `apierror.ErrConflict`
 - `PgxText(s)` — converts Go string to `pgtype.Text`; empty string becomes NULL
 - `FromNullableTime(t)` — converts `pgtype.Timestamptz` to `*time.Time`
-
----
-
-### `provisioner`
-
-Single interface consumed by the auth service:
-
-```go
-type PrincipalProvisioner interface {
-    Provision(ctx context.Context, externalID uuid.UUID, principalType types.PrincipalType) error
-}
-```
-
-Satisfied by `services/iam/client.Client`. Decouples auth from IAM's HTTP API.
 
 ---
 

@@ -96,6 +96,7 @@ func (s *Server) registerRoutes() {
 				r.Delete("/{id}", s.deletePrincipal)
 				r.Post("/{id}/activate", s.activatePrincipal)
 				r.Post("/{id}/deactivate", s.deactivatePrincipal)
+				r.Get("/{id}/permissions", s.getPrincipalPermissions)
 				r.Get("/{id}/roles", s.listRolesByPrincipal)
 				r.Post("/{id}/roles", s.assignRoleToPrincipal)
 				r.Delete("/{id}/roles/{roleID}", s.removeRoleFromPrincipal)

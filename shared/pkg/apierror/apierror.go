@@ -12,30 +12,34 @@ import (
 type ErrorCode string
 
 const (
-	CodeNotFound        ErrorCode = "NOT_FOUND"
-	CodeConflict        ErrorCode = "CONFLICT"
-	CodeForbidden       ErrorCode = "FORBIDDEN"
-	CodeInvalidArgument ErrorCode = "INVALID_ARGUMENT"
-	CodeUnauthorized    ErrorCode = "UNAUTHORIZED"
-	CodeInternal        ErrorCode = "INTERNAL_ERROR"
+	CodeNotFound           ErrorCode = "NOT_FOUND"
+	CodeConflict           ErrorCode = "CONFLICT"
+	CodeForbidden          ErrorCode = "FORBIDDEN"
+	CodeInvalidArgument    ErrorCode = "INVALID_ARGUMENT"
+	CodeUnauthorized       ErrorCode = "UNAUTHORIZED"
+	CodeInternal           ErrorCode = "INTERNAL_ERROR"
+	CodeInvalidCredentials ErrorCode = "INVALID_CREDENTIALS"
 )
 
 // Sentinel errors returned by the repository and domain layers.
 // Handlers should never inspect raw pgx or database errors directly —
 // all errors should be mapped to these before reaching the handler.
 var (
-	ErrNotFound        = errors.New("not found")
-	ErrConflict        = errors.New("already exists")
-	ErrForbidden       = errors.New("forbidden")
-	ErrInvalidArgument = errors.New("invalid argument")
-	ErrUnauthorized    = errors.New("unauthorized")
-	ErrInternal        = errors.New("internal error")
+	ErrNotFound           = errors.New("not found")
+	ErrConflict           = errors.New("already exists")
+	ErrForbidden          = errors.New("forbidden")
+	ErrInvalidArgument    = errors.New("invalid argument")
+	ErrUnauthorized       = errors.New("unauthorized")
+	ErrInternal           = errors.New("internal error")
+	ErrInvalidCredentials = errors.New("invalid credentials")
 )
 
 // HTTPStatus maps a sentinel error to the appropriate HTTP status code.
 // Falls back to 500 Internal Server Error for unrecognized errors.
 func HTTPStatus(err error) int {
 	switch {
+	case errors.Is(err, ErrInvalidCredentials):
+		return http.StatusUnauthorized
 	case errors.Is(err, ErrNotFound):
 		return http.StatusNotFound
 	case errors.Is(err, ErrConflict):
@@ -55,6 +59,8 @@ func HTTPStatus(err error) int {
 // Falls back to CodeInternal for unrecognized errors.
 func Code(err error) ErrorCode {
 	switch {
+	case errors.Is(err, ErrInvalidCredentials):
+		return CodeInvalidCredentials
 	case errors.Is(err, ErrNotFound):
 		return CodeNotFound
 	case errors.Is(err, ErrConflict):
