@@ -8,6 +8,7 @@ import (
 	"github.com/araujoarthur/intranetbackend/services/iam/contract"
 	"github.com/araujoarthur/intranetbackend/shared/pkg/apierror"
 	"github.com/araujoarthur/intranetbackend/shared/pkg/response"
+	"github.com/araujoarthur/intranetbackend/shared/pkg/token"
 )
 
 func (s *Server) listRoles(w http.ResponseWriter, r *http.Request) {
@@ -41,7 +42,7 @@ func (s *Server) getRoleByID(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) createRole(w http.ResponseWriter, r *http.Request) {
-	callerID, err := extractCallerID(r.Context())
+	callerID, err := token.ActorFromContext(r.Context())
 	if err != nil {
 		response.Error(w, apierror.ErrUnauthorized, err.Error())
 		return
@@ -63,7 +64,7 @@ func (s *Server) createRole(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) updateRole(w http.ResponseWriter, r *http.Request) {
-	callerID, err := extractCallerID(r.Context())
+	callerID, err := token.ActorFromContext(r.Context())
 	if err != nil {
 		response.Error(w, apierror.ErrUnauthorized, err.Error())
 		return
@@ -90,7 +91,7 @@ func (s *Server) updateRole(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) deleteRole(w http.ResponseWriter, r *http.Request) {
-	callerID, err := extractCallerID(r.Context())
+	callerID, err := token.ActorFromContext(r.Context())
 	if err != nil {
 		response.Error(w, apierror.ErrUnauthorized, err.Error())
 		return
@@ -131,7 +132,7 @@ func (s *Server) listPermissionsByRole(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) assignPermissionToRole(w http.ResponseWriter, r *http.Request) {
-	callerID, err := extractCallerID(r.Context())
+	callerID, err := token.ActorFromContext(r.Context())
 	if err != nil {
 		response.Error(w, apierror.ErrUnauthorized, err.Error())
 		return
@@ -157,7 +158,7 @@ func (s *Server) assignPermissionToRole(w http.ResponseWriter, r *http.Request) 
 }
 
 func (s *Server) removePermissionFromRole(w http.ResponseWriter, r *http.Request) {
-	callerID, err := extractCallerID(r.Context())
+	callerID, err := token.ActorFromContext(r.Context())
 	if err != nil {
 		response.Error(w, apierror.ErrUnauthorized, err.Error())
 		return

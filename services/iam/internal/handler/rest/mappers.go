@@ -1,7 +1,6 @@
 package rest
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 
@@ -9,7 +8,6 @@ import (
 	"github.com/araujoarthur/intranetbackend/services/iam/internal/repository"
 	"github.com/araujoarthur/intranetbackend/shared/pkg/apierror"
 	"github.com/araujoarthur/intranetbackend/shared/pkg/response"
-	"github.com/araujoarthur/intranetbackend/shared/pkg/token"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 )
@@ -61,24 +59,4 @@ func parseUUIDParam(w http.ResponseWriter, r *http.Request, param string) (uuid.
 	}
 
 	return parsed, true
-}
-
-// extractCallerID extracts the acting principal ID from context.
-// Falls back to the service's own principal ID if no acting principal is present.
-func extractCallerID(ctx context.Context) (uuid.UUID, error) {
-	actingID := token.ActingPrincipalFromContext(ctx)
-	if actingID != "" {
-		parsed, err := uuid.Parse(actingID)
-		if err != nil {
-			return uuid.UUID{}, fmt.Errorf("invalid X-Principal-ID header: %w", err)
-		}
-		return parsed, nil
-	}
-
-	claims, ok := token.FromContext(ctx)
-	if !ok {
-		return uuid.UUID{}, fmt.Errorf("missing claims in context")
-	}
-
-	return claims.Subject, nil
 }

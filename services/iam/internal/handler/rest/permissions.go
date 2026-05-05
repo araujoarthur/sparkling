@@ -8,6 +8,7 @@ import (
 	"github.com/araujoarthur/intranetbackend/services/iam/contract"
 	"github.com/araujoarthur/intranetbackend/shared/pkg/apierror"
 	"github.com/araujoarthur/intranetbackend/shared/pkg/response"
+	"github.com/araujoarthur/intranetbackend/shared/pkg/token"
 )
 
 func (s *Server) listPermissions(w http.ResponseWriter, r *http.Request) {
@@ -26,7 +27,7 @@ func (s *Server) listPermissions(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) createPermission(w http.ResponseWriter, r *http.Request) {
-	callerID, err := extractCallerID(r.Context())
+	callerID, err := token.ActorFromContext(r.Context())
 	if err != nil {
 		response.Error(w, apierror.ErrUnauthorized, err.Error())
 		return
@@ -63,7 +64,7 @@ func (s *Server) getPermissionByID(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) deletePermission(w http.ResponseWriter, r *http.Request) {
-	callerID, err := extractCallerID(r.Context())
+	callerID, err := token.ActorFromContext(r.Context())
 	if err != nil {
 		response.Error(w, apierror.ErrUnauthorized, err.Error())
 		return
