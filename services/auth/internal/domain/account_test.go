@@ -55,10 +55,14 @@ func (m *mockHasher) Verify(plaintext, hash string) (bool, error) {
 
 // mockIdentityRepo implements repository.IdentityRepository.
 type mockIdentityRepo struct {
+	createFn func(ctx context.Context) (repository.Identity, error)
 	deleteFn func(ctx context.Context, id uuid.UUID) error
 }
 
-func (m *mockIdentityRepo) Create(_ context.Context) (repository.Identity, error) {
+func (m *mockIdentityRepo) Create(ctx context.Context) (repository.Identity, error) {
+	if m.createFn != nil {
+		return m.createFn(ctx)
+	}
 	return repository.Identity{}, nil
 }
 
@@ -75,13 +79,17 @@ func (m *mockIdentityRepo) Delete(ctx context.Context, id uuid.UUID) error {
 
 // mockCredentialRepo implements repository.CredentialRepository.
 type mockCredentialRepo struct {
+	createFn               func(ctx context.Context, identityID uuid.UUID, credentialType repository.CredentialType, identifier string, secretHash string) (repository.Credential, error)
 	getByIDFn              func(ctx context.Context, credentialID uuid.UUID) (repository.Credential, error)
 	getByIdentityAndTypeFn func(ctx context.Context, identityID uuid.UUID, credentialType repository.CredentialType) (repository.Credential, error)
 	updateSecretFn         func(ctx context.Context, credentialID uuid.UUID, secretHash string) error
 	deleteFn               func(ctx context.Context, credentialID uuid.UUID) error
 }
 
-func (m *mockCredentialRepo) Create(_ context.Context, _ uuid.UUID, _ repository.CredentialType, _ string, _ string) (repository.Credential, error) {
+func (m *mockCredentialRepo) Create(ctx context.Context, identityID uuid.UUID, credentialType repository.CredentialType, identifier string, secretHash string) (repository.Credential, error) {
+	if m.createFn != nil {
+		return m.createFn(ctx, identityID, credentialType, identifier, secretHash)
+	}
 	return repository.Credential{}, nil
 }
 
@@ -220,6 +228,102 @@ func newTestStore(
 		return fn(s)
 	}
 	return s
+}
+
+// ---------------------------------------------------------------------------
+// Register
+// ---------------------------------------------------------------------------
+
+func TestRegister_Success(t *testing.T) {
+	identityID := uuid.New()
+	var createdCredential struct {
+		identityID uuid.UUID
+		typ        repository.CredentialType
+		username   string
+		secretHash string
+	}
+
+	store := newTestStore(
+		&mockIdentityRepo{
+			createFn: func(_ context.Context) (repository.Identity, error) {
+				return repository.Identity{ID: identityID}, nil
+			},
+		},
+		&mockCredentialRepo{
+			createFn: func(_ context.Context, identityID uuid.UUID, typ repository.CredentialType, username string, secretHash string) (repository.Credential, error) {
+				createdCredential.identityID = identityID
+				createdCredential.typ = typ
+				createdCredential.username = username
+				createdCredential.secretHash = secretHash
+				return repository.Credential{}, nil
+			},
+		},
+		&mockRefreshTokenRepo{},
+	)
+
+	svc := domain.NewSessionService(store, &mockHasher{}, &mockIAMClient{}, nil)
+	identity, err := svc.Register(context.Background(), "arthur", "secret")
+
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if identity.ID != identityID {
+		t.Fatalf("expected identity %v, got %v", identityID, identity.ID)
+	}
+	if createdCredential.identityID != identityID {
+		t.Fatalf("expected credential for identity %v, got %v", identityID, createdCredential.identityID)
+	}
+	if createdCredential.typ != repository.CredentialTypePassword {
+		t.Fatalf("expected password credential, got %q", createdCredential.typ)
+	}
+	if createdCredential.username != "arthur" {
+		t.Fatalf("expected username arthur, got %q", createdCredential.username)
+	}
+	if createdCredential.secretHash != "hashed:secret" {
+		t.Fatalf("expected hashed password, got %q", createdCredential.secretHash)
+	}
+}
+
+func TestRegister_EmptyUsername(t *testing.T) {
+	var hashCalled bool
+	store := newTestStore(&mockIdentityRepo{}, &mockCredentialRepo{}, &mockRefreshTokenRepo{})
+	hasher := &mockHasher{
+		hashFn: func(_ string) (string, error) {
+			hashCalled = true
+			return "", nil
+		},
+	}
+
+	svc := domain.NewSessionService(store, hasher, &mockIAMClient{}, nil)
+	_, err := svc.Register(context.Background(), "   ", "secret")
+
+	if !errors.Is(err, apierror.ErrInvalidArgument) {
+		t.Fatalf("expected ErrInvalidArgument, got %v", err)
+	}
+	if hashCalled {
+		t.Fatal("expected validation to fail before hashing")
+	}
+}
+
+func TestRegister_EmptyPassword(t *testing.T) {
+	var hashCalled bool
+	store := newTestStore(&mockIdentityRepo{}, &mockCredentialRepo{}, &mockRefreshTokenRepo{})
+	hasher := &mockHasher{
+		hashFn: func(_ string) (string, error) {
+			hashCalled = true
+			return "", nil
+		},
+	}
+
+	svc := domain.NewSessionService(store, hasher, &mockIAMClient{}, nil)
+	_, err := svc.Register(context.Background(), "arthur", "   ")
+
+	if !errors.Is(err, apierror.ErrInvalidArgument) {
+		t.Fatalf("expected ErrInvalidArgument, got %v", err)
+	}
+	if hashCalled {
+		t.Fatal("expected validation to fail before hashing")
+	}
 }
 
 // ---------------------------------------------------------------------------

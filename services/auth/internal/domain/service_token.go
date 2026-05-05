@@ -33,6 +33,13 @@ type serviceTokenService struct {
 	privateKey *rsa.PrivateKey
 }
 
+func NewServiceTokenService(store *repository.Store, privateKey *rsa.PrivateKey) ServiceTokenService {
+	return &serviceTokenService{
+		store:      store,
+		privateKey: privateKey,
+	}
+}
+
 func (s *serviceTokenService) Issue(ctx context.Context, identityID uuid.UUID) (string, error) {
 	serviceToken, err := token.IssueServiceToken(identityID, s.privateKey)
 	if err != nil {

@@ -1,4 +1,5 @@
 .env
+.gocache/
 setup.sql
 *.exe
 *.pem

@@ -34,7 +34,7 @@ type SessionService interface {
 	Logout(ctx context.Context, rawRefreshToken string) error
 
 	// LogoutAll revokes all refresh tokens for the given identity.
-	LogoutAll(ctx context.Context, identityID uuid.UUID) error
+	LogoutAll(ctx context.Context, callerID, identityID uuid.UUID) error
 }
 
 type sessionService struct {
@@ -156,6 +156,11 @@ func (s *sessionService) Login(ctx context.Context, username, password string) (
 }
 
 func (s *sessionService) Refresh(ctx context.Context, rawRefreshToken string) (LoginResult, error) {
+
+	if strings.TrimSpace(rawRefreshToken) == "" {
+		return LoginResult{}, fmt.Errorf("SessionService.Refresh [raw_token]: %w", apierror.ErrInvalidArgument)
+	}
+
 	hashed := hashToken(rawRefreshToken)
 
 	fetched, err := s.store.RefreshTokens.GetByHash(ctx, hashed)
@@ -226,7 +231,16 @@ func (s *sessionService) Logout(ctx context.Context, rawRefreshToken string) err
 
 }
 
-func (s *sessionService) LogoutAll(ctx context.Context, identityID uuid.UUID) error {
+func (s *sessionService) LogoutAll(ctx context.Context, callerID, identityID uuid.UUID) error {
+
+	allowed, err := isOwnerOrHasPermission(ctx, s.iamClient, callerID, identityID, permissionAuthSessionsRevoke)
+	if err != nil {
+		return fmt.Errorf("SessionService.LogoutAll: %w", err)
+	}
+
+	if !allowed {
+		return fmt.Errorf("SessionService.LogoutAll: %w", apierror.ErrForbidden)
+	}
 
 	if err := s.store.RefreshTokens.RevokeAllByIdentity(ctx, identityID); err != nil {
 		return fmt.Errorf("SessionService.LogoutAll: %w", err)

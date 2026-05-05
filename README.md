@@ -29,6 +29,12 @@ backendv2/
 
 Detailed documentation for each package and service lives in `CONTEXT.md` files throughout the tree. These files are written for LLMs and coding agents — they provide the structured context needed for AI-assisted development. The root `CONTEXT.md` provides the full architectural overview.
 
+## Service Boundary
+
+`auth` and `iam` are internal backend services. Application services such as the future `webapp` call them with service tokens; browsers and end users should not call them directly.
+
+Except for `/api/v1/health`, IAM routes are protected by service-token middleware. Auth routes should follow the same boundary: registration, login, refresh, logout, and account-management operations are requested by a trusted service using its own service token. When a request is made on behalf of a human user, the caller passes that user in `X-Principal-ID`.
+
 ## Prerequisites
 
 - **Go** >= 1.26.1
@@ -119,6 +125,8 @@ inetbctl keys generate [--out dir]   Generate RSA key pair (default: ./keys)
 The `CONTEXT.md` files are designed for LLMs and coding agents to quickly understand the codebase without reading every source file. They document types, interfaces, function signatures, business rules, and known issues.
 
 - `CONTEXT.md` — Full project architecture, service details, shared package reference
+- `docs/error-handling.md` — Cross-package error translation rules
+- `docs/response-package.md` — Response envelope and handler conventions
 - `services/iam/CONTEXT.md` — IAM service internals, route table, domain rules
 - `services/auth/CONTEXT.md` — Auth service internals, repository interfaces
 - `shared/pkg/*/CONTEXT.md` — Per-package documentation

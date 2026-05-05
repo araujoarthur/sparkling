@@ -20,6 +20,7 @@ const (
 	permissionAuthIdentitiesDelete  = "auth:identities:delete"
 	permissionAuthCredentialsEdit   = "auth:credentials:edit"
 	permissionAuthCredentialsDelete = "auth:credentials:delete"
+	permissionAuthSessionsRevoke    = "auth:sessions:revoke"
 )
 
 type LoginResult struct {

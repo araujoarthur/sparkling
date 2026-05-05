@@ -103,8 +103,9 @@ iam:role-{name}:grant    (one per role, auto-created)
 | Method | Path | Auth | Purpose |
 |--------|------|------|---------|
 | GET | `/health` | none | Health check |
-| POST | `/principals` | none | Create principal (called by auth service) |
 | * | `/roles`, `/permissions`, `/principals` | service token | Full CRUD + assignment operations |
+
+IAM is an internal service. Except for `/health`, all IAM routes are protected by `token.Middleware`, which accepts only service tokens. Auth calls `POST /principals` through the IAM client using the auth service token; users and browsers should not call IAM directly.
 
 **Status:** Fully implemented — repository, domain, and handler layers complete.
 
@@ -150,6 +151,8 @@ Standard JSON response envelopes. All handlers write responses through this pack
 ```
 
 **Functions:** `JSON(w, status, data)`, `Paginated(w, status, data, page, perPage, total)`, `Error(w, err, message)`
+
+See `docs/response-package.md` for handler usage conventions.
 
 ---
 
@@ -279,11 +282,17 @@ Schema migrations define the authoritative database structure. SQL query files a
 
 ### Service-to-Service Authentication
 
-1. Each service has a service account identity in the auth service
-2. Auth issues a non-expiring service token for that identity
-3. Calling service attaches the token as `Authorization: Bearer <token>`
-4. Receiving service validates the token's RS256 signature against the shared public key
-5. The `X-Principal-ID` header carries the UUID of the human user being acted upon
+Auth and IAM are internal services. Browser clients and end users should not call them directly. They are called by trusted application services, such as the future `webapp`, using service-to-service authentication.
+
+1. Each calling service has a service account identity in auth.
+2. Auth issues a non-expiring service token for that service identity.
+3. The calling service attaches that token as `Authorization: Bearer <token>`.
+4. The receiving service validates the token's RS256 signature against the shared public key.
+5. `token.Middleware` accepts service tokens only; user tokens are rejected.
+6. When the service is acting for a human user, `X-Principal-ID` carries that user's principal UUID.
+7. If `X-Principal-ID` is absent, handlers treat the calling service principal as the actor.
+
+Only health checks are intentionally unauthenticated. Registration, login, refresh, logout, IAM principal creation, and IAM management routes are service-token-protected internal operations.
 
 ### Dependency Injection
 
