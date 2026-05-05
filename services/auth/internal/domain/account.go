@@ -75,7 +75,7 @@ func (s *accountService) ChangePassword(ctx context.Context, callerID uuid.UUID,
 		return fmt.Errorf("AccountService.ChangePassword: %w", err)
 	}
 
-	// The conditional bellow checks specifically if the caller is the owner
+	// The conditional below checks specifically if the caller is the owner
 	// of the identity. If true, then the verification of the old password is
 	// needed to prevent account theft following a session hijacking. If the
 	// request has reached this point but the caller is NOT the owner, then it

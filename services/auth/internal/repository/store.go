@@ -22,6 +22,10 @@ type Store struct {
 	ServiceTokens ServiceTokenRepository
 
 	pool *pgxpool.Pool
+
+	// WithTxFn, when set, replaces the default transaction behavior in WithTx.
+	// Used in unit tests to avoid requiring a real database connection.
+	WithTxFn func(ctx context.Context, fn func(store *Store) error) error
 }
 
 func NewStore(pool *pgxpool.Pool) *Store {
@@ -38,6 +42,9 @@ func NewStore(pool *pgxpool.Pool) *Store {
 // WithTx runs fn inside a transaction. All repository calls inside fn
 // should use the tx-scoped store returned to the callback.
 func (s *Store) WithTx(ctx context.Context, fn func(store *Store) error) error {
+	if s.WithTxFn != nil {
+		return s.WithTxFn(ctx, fn)
+	}
 	return database.WithTx(ctx, s.pool, func(tx pgx.Tx) error {
 		q := generated.New(tx)
 		txStore := &Store{

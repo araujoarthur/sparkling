@@ -119,13 +119,8 @@ func (s *sessionService) Login(ctx context.Context, username, password string) (
 		return LoginResult{}, apierror.ErrInvalidCredentials
 	}
 
-	claims := token.Claims{
-		Subject:       requestedCredentials.IdentityID,
-		PrincipalType: types.PrincipalTypeUser,
-	}
-
 	// Issue the AccessToken
-	accessToken, err := token.Issue(claims, s.privateKey)
+	accessToken, err := token.IssueUserToken(requestedCredentials.IdentityID, s.privateKey)
 	if err != nil {
 		return LoginResult{}, fmt.Errorf("SessionService.Login [access token]: %w", err)
 	}
@@ -165,7 +160,7 @@ func (s *sessionService) Refresh(ctx context.Context, rawRefreshToken string) (L
 	// if fetching returns no error, the token is equal and valid.
 
 	// issue new access token
-	newAccessToken, err := token.Issue(token.Claims{Subject: fetched.IdentityID, PrincipalType: types.PrincipalTypeUser}, s.privateKey)
+	newAccessToken, err := token.IssueUserToken(fetched.IdentityID, s.privateKey)
 	if err != nil {
 		return LoginResult{}, fmt.Errorf("SessionService.Refresh [access token]: %w", err)
 	}
