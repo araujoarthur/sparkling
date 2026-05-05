@@ -5,6 +5,7 @@ import (
 	"crypto/rsa"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/araujoarthur/intranetbackend/services/auth/internal/repository"
@@ -57,6 +58,15 @@ func NewSessionService(store *repository.Store, hasher hasher.Hasher, iamClient 
 //----------------------------
 
 func (s *sessionService) Register(ctx context.Context, username, password string) (repository.Identity, error) {
+
+	if strings.TrimSpace(username) == "" {
+		return repository.Identity{}, fmt.Errorf("SessionService.Register [username]: %w", apierror.ErrInvalidArgument)
+	}
+
+	if strings.TrimSpace(password) == "" {
+		return repository.Identity{}, fmt.Errorf("SessionService.Register [password]: %w", apierror.ErrInvalidArgument)
+	}
+
 	hashed, err := s.hasher.Hash(password)
 	if err != nil {
 		return repository.Identity{}, fmt.Errorf("SessionService.Register [hash]: %w", err)
