@@ -35,21 +35,20 @@ This interface was extracted from the former `shared/pkg/provisioner` package to
 - `baseURL` — IAM service URL (e.g. `"http://iam:8081"`)
 - `token` — service token attached as `Authorization: Bearer <token>` to every request
 
-**Bug:** Timeout is `10 & time.Second` (bitwise AND = 0). Should be `10 * time.Second`.
+The underlying `http.Client` uses a `10 * time.Second` timeout.
 
 ### Methods
 
 **`Provision(ctx, externalID, principalType)`**
 Posts `CreatePrincipalRequest` to `POST /api/v1/principals`. Returns an error if the response is not `201 Created`.
 
-**`HasPermission`** — declared in the interface but not yet implemented in `client.go`.
+**`HasPermission`**
+Calls `GET /api/v1/principals/{id}/permissions` with the principal as `X-Principal-ID`, decodes the response envelope, and scans for an exact permission name match.
 
 ### Internal
 
-`do(ctx, method, path, body) (*http.Response, error)` — shared HTTP helper. Marshals body to JSON, attaches auth header and content type, executes the request. Caller is responsible for closing `resp.Body`.
+`do(ctx, method, path, body, actingPrincipal) (*http.Response, error)` — shared HTTP helper. Marshals body to JSON, attaches auth header and content type, optionally sets `X-Principal-ID`, and executes the request. Caller is responsible for closing `resp.Body`.
 
 ## Known Issues
 
-- **Route mismatch:** The client calls `POST /api/v1/principals` but the IAM server registers `createPrincipal` at `POST /api/v1/` (see `services/iam/internal/handler/rest/server.go:69`).
-- **Zero timeout:** `10 & time.Second` evaluates to 0 — no HTTP timeout.
-- **HasPermission not implemented:** Interface method exists but `client.go` has no corresponding method.
+- `HasPermission` fetches and scans the full effective permission list client-side. This is correct but may become inefficient for large permission sets.

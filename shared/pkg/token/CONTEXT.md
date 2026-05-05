@@ -53,7 +53,7 @@ Signs and returns a JWT using RS256.
 - **User tokens** (`PrincipalTypeUser`): `exp` is set to `now + 15m`
 - **Service tokens** (`PrincipalTypeService`): `exp` is omitted — validity is controlled by the auth service's revocation table
 
-Should only be called by the **auth service** or **inetbctl**. All other services only validate tokens.
+Should only be called by auth-domain code. The current CLI generates RSA keys but does not issue JWTs. All other services only validate tokens.
 
 ### `Parse(tokenString string, publicKey *rsa.PublicKey) (Claims, error)`
 

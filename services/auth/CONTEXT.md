@@ -14,9 +14,9 @@ services/auth/
 │   ├── domain/
 │   │   ├── auth_domain.go      shared helpers (LoginResult, RefreshTokenDuration, generateToken, hashToken)
 │   │   ├── session.go          SessionService interface + full implementation
-│   │   ├── account.go          AccountService interface (not yet implemented)
-│   │   ├── refresh_token.go    placeholder (empty)
-│   │   └── service_token.go    placeholder (empty)
+│   │   ├── account.go          AccountService interface + implementation
+│   │   ├── refresh_token.go    RefreshTokenService interface + implementation
+│   │   └── service_token.go    ServiceTokenService interface + implementation
 │   └── repository/
 │       ├── auth_repository.go  domain types + mappers
 │       ├── store.go            Store — single entry point to all repos
@@ -35,7 +35,7 @@ services/auth/
 - Issue **access tokens** (15 min, RS256 JWT) and **refresh tokens** (7-day expiry)
 - Issue and rotate **service tokens** (non-expiring JWTs; revocation-controlled)
 - Provision an IAM principal automatically when a new identity registers (via `iamclient.IAMClient`)
-- Run a daily background job to rotate service tokens
+- Provide service-token rotation logic; the background scheduler is not wired yet
 
 ## Database Schema (`auth` schema)
 
@@ -150,7 +150,7 @@ type SessionService interface {
 }
 ```
 
-**Constructor:** `NewSessionService(store, hasher, provisioner, privateKey)`
+**Constructor:** `NewSessionService(store, hasher, iamClient, privateKey)`
 
 | Method | Behaviour |
 |---|---|
@@ -173,21 +173,43 @@ type SessionService interface {
 
 ```go
 type AccountService interface {
-    Delete(ctx, identityID uuid.UUID) error
-    ChangePassword(ctx, identityID uuid.UUID, oldPassword, newPassword string) error
+    Delete(ctx context.Context, callerID uuid.UUID, identityID uuid.UUID) error
+    ChangePassword(ctx context.Context, callerID uuid.UUID, identityID uuid.UUID, oldPassword, newPassword string) error
+    RemoveCredential(ctx context.Context, callerID uuid.UUID, identityID uuid.UUID, credentialID uuid.UUID) error
 }
 ```
 
-Interface only — no implementation yet. `Delete` cascades to credentials, refresh tokens, and service tokens. `ChangePassword` verifies the old password first and revokes all active refresh tokens.
+Implemented. `Delete` requires the caller to be the identity owner or hold `auth:identities:delete`, then deletes the identity through the repository cascade. `ChangePassword` requires ownership or `auth:credentials:edit`; owners must verify the old password, admins with permission skip that check, and all refresh tokens are revoked after the password changes. `RemoveCredential` requires ownership or `auth:credentials:delete`, blocks removal of password credentials, and verifies the credential belongs to the target identity.
+
+### RefreshTokenService (`refresh_token.go`)
+
+```go
+type RefreshTokenService interface {
+    DeleteAllExpired(ctx context.Context) error
+}
+```
+
+Implemented cleanup service for deleting expired refresh tokens through the repository.
+
+### ServiceTokenService (`service_token.go`)
+
+```go
+type ServiceTokenService interface {
+    Issue(ctx context.Context, identityID uuid.UUID) (string, error)
+    Rotate(ctx context.Context) error
+}
+```
+
+Implemented service-token issuing and rotation logic. `Issue` signs a non-expiring service JWT, revokes existing active service tokens for the identity, and stores the new token in one transaction. `Rotate` lists active service tokens and reissues them one identity at a time, logging per-identity failures and continuing.
 
 ---
 
 ## Status
 
 - Repository layer: **complete** — all four repositories implemented
-- Domain layer: **mostly implemented** — `SessionService` fully working; `AccountService` interface defined, not implemented; `refresh_token.go` and `service_token.go` are empty placeholders
-- Handler layer: **not started**
-- `main.go`: **not started**
+- Domain layer: **mostly implemented** — `SessionService`, `AccountService`, `RefreshTokenService`, and `ServiceTokenService` are implemented. `ServiceTokenService` currently has no constructor function.
+- Handler layer: **stub only** — `internal/handler/rest/server.go` currently defines an empty `Server` struct.
+- `cmd/authd/main.go`: **not started**
 
 ## Shared Packages Used
 
@@ -199,5 +221,5 @@ Interface only — no implementation yet. `Delete` cascades to credentials, refr
 | `shared/pkg/token` | `Issue` for signing access tokens (RS256) |
 | `shared/pkg/hasher` | Password hashing (`Argon2Hasher` / `BcryptHasher`) |
 | `shared/pkg/types` | `PrincipalType` constants |
-| `services/iam/client` | `IAMClient` interface — IAM principal provisioning |
+| `services/iam/client` | `IAMClient` interface — IAM principal provisioning and permission checks |
 | `shared/pkg/keyprovider` | RSA key loading (main, when implemented) |

@@ -37,7 +37,7 @@ Several packages need `PrincipalType`:
 - `services/iam/client` — `IAMClient.Provision(ctx, id, PrincipalType)`
 - `services/auth/internal/domain` — passes `PrincipalType` during registration
 
-If `PrincipalType` were defined in `token` or `provisioner`, those packages would create circular imports. Placing it here — a package with no dependencies — breaks all cycles.
+If `PrincipalType` were defined in `token` or a service client package, those packages could create circular imports. Placing it here — a package with no dependencies — breaks all cycles.
 
 ## Rules
 

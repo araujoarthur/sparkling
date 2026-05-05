@@ -26,7 +26,6 @@ Wraps a `chi.Mux`. Implements `http.Handler` via `ServeHTTP`.
 | Method | Path | Auth | Handler |
 |---|---|---|---|
 | GET | `/api/v1/health` | none | `health` |
-| POST | `/api/v1/` | none | `createPrincipal` (**see note**) |
 | GET | `/api/v1/roles` | service token | `listRoles` |
 | POST | `/api/v1/roles` | service token | `createRole` |
 | GET | `/api/v1/roles/{id}` | service token | `getRoleByID` |
@@ -42,18 +41,16 @@ Wraps a `chi.Mux`. Implements `http.Handler` via `ServeHTTP`.
 | DELETE | `/api/v1/permissions/{id}` | service token | `deletePermission` |
 | GET | `/api/v1/permissions/{id}/roles` | service token | `listRolesByPermission` |
 | GET | `/api/v1/principals` | service token | `listPrincipals` |
+| POST | `/api/v1/principals` | service token | `createPrincipal` |
 | GET | `/api/v1/principals/by-external-id/{externalID}` | service token | `getPrincipalByExternalID` |
 | GET | `/api/v1/principals/{id}` | service token | `getPrincipalByID` |
 | DELETE | `/api/v1/principals/{id}` | service token | `deletePrincipal` |
 | POST | `/api/v1/principals/{id}/activate` | service token | `activatePrincipal` |
 | POST | `/api/v1/principals/{id}/deactivate` | service token | `deactivatePrincipal` |
+| GET | `/api/v1/principals/{id}/permissions` | service token | `getPrincipalPermissions` |
 | GET | `/api/v1/principals/{id}/roles` | service token | `listRolesByPrincipal` |
 | POST | `/api/v1/principals/{id}/roles` | service token | `assignRoleToPrincipal` |
 | DELETE | `/api/v1/principals/{id}/roles/{roleID}` | service token | `removeRoleFromPrincipal` |
-
-**Route mismatch — `createPrincipal`:** Registered at `r.Post("/", ...)` inside the `/api/v1` group = `POST /api/v1/`. The IAM client calls `POST /api/v1/principals`. These do not match. The route is placed before `r.Use(token.Middleware(...))` so it intentionally has no auth.
-
-**Unregistered handler:** `getPrincipalPermissions` is defined in `principals.go` but has no route in `server.go`. It is unreachable.
 
 `GET /principals/by-external-id/{externalID}` requires a `?type=user|service` query parameter.
 

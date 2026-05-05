@@ -33,7 +33,7 @@ type PrivateKeyProvider interface {
 }
 ```
 
-Extends `PublicKeyProvider`. Only the auth service (and `inetbctl`) depend on this — they are the only consumers of the private key.
+Extends `PublicKeyProvider`. Auth-domain code needs the private key for JWT issuance. The current CLI generates RSA key files directly and does not use this provider to issue tokens.
 
 ## Implementations
 

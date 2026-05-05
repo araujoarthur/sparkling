@@ -8,9 +8,9 @@ Business logic layer for the auth service. Implements session management (regist
 domain/
 ├── auth_domain.go      shared helpers: LoginResult, RefreshTokenDuration, generateToken, hashToken
 ├── session.go          SessionService interface + full implementation
-├── account.go          AccountService interface (not yet implemented)
-├── refresh_token.go    placeholder (empty)
-└── service_token.go    placeholder (empty)
+├── account.go          AccountService interface + implementation
+├── refresh_token.go    RefreshTokenService interface + implementation
+└── service_token.go    ServiceTokenService interface + implementation
 ```
 
 ## Shared Helpers (`auth_domain.go`)
@@ -37,7 +37,7 @@ type SessionService interface {
 }
 ```
 
-**Constructor:** `NewSessionService(store *repository.Store, hasher hasher.Hasher, provisioner provisioner.PrincipalProvisioner, privateKey *rsa.PrivateKey)`
+**Constructor:** `NewSessionService(store *repository.Store, hasher hasher.Hasher, iamClient iamclient.IAMClient, privateKey *rsa.PrivateKey)`
 
 ### Method Details
 
@@ -64,12 +64,40 @@ type SessionService interface {
 
 ```go
 type AccountService interface {
-    Delete(ctx, identityID uuid.UUID) error
-    ChangePassword(ctx, identityID uuid.UUID, oldPassword, newPassword string) error
+    Delete(ctx context.Context, callerID uuid.UUID, identityID uuid.UUID) error
+    ChangePassword(ctx context.Context, callerID uuid.UUID, identityID uuid.UUID, oldPassword, newPassword string) error
+    RemoveCredential(ctx context.Context, callerID uuid.UUID, identityID uuid.UUID, credentialID uuid.UUID) error
 }
 ```
 
-Interface only — no implementation yet. `Delete` cascades to credentials, refresh tokens, and service tokens. `ChangePassword` verifies the old password and revokes all active refresh tokens.
+Implemented in `account.go`.
+
+| Method | Behaviour |
+|---|---|
+| `Delete` | Caller must be the owner or hold `auth:identities:delete`; deletes the identity through the repository cascade |
+| `ChangePassword` | Caller must be the owner or hold `auth:credentials:edit`; owners verify the old password; updates the credential hash and revokes all refresh tokens in a transaction |
+| `RemoveCredential` | Caller must be the owner or hold `auth:credentials:delete`; password credentials cannot be removed; credential must belong to the target identity |
+
+### RefreshTokenService (`refresh_token.go`)
+
+```go
+type RefreshTokenService interface {
+    DeleteAllExpired(ctx context.Context) error
+}
+```
+
+Implemented cleanup service for expired refresh tokens.
+
+### ServiceTokenService (`service_token.go`)
+
+```go
+type ServiceTokenService interface {
+    Issue(ctx context.Context, identityID uuid.UUID) (string, error)
+    Rotate(ctx context.Context) error
+}
+```
+
+Implemented service-token issuing and rotation logic. `Issue` signs a non-expiring service token, revokes any existing active service tokens for that identity, and stores the new token in a transaction. `Rotate` reissues every active service token, logging and skipping individual failures.
 
 ## Dependencies
 
@@ -78,10 +106,12 @@ Interface only — no implementation yet. `Delete` cascades to credentials, refr
 | `services/auth/internal/repository` | `Store`, domain types (`Identity`, `Credential`, `RefreshToken`) |
 | `shared/pkg/apierror` | `ErrNotFound`, `ErrInvalidCredentials` |
 | `shared/pkg/hasher` | `Hasher` interface for password hashing/verification |
-| `shared/pkg/provisioner` | `PrincipalProvisioner` interface (note: package deleted, pending migration to `iamclient.IAMClient`) |
+| `services/iam/client` | `IAMClient` interface for IAM principal provisioning and permission checks |
 | `shared/pkg/token` | `Issue()` for signing access tokens, `Claims` |
 | `shared/pkg/types` | `PrincipalTypeUser` |
 
-## Known Issues
+## Current Gaps
 
-- `session.go` still imports `shared/pkg/provisioner` which has been deleted. Needs to be updated to use `iamclient.IAMClient` from `services/iam/client`.
+- Auth REST handlers are still a stub outside this package.
+- `cmd/authd/main.go` has not been created.
+- `ServiceTokenService` has implementation methods but no constructor function.

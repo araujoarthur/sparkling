@@ -231,7 +231,6 @@ rest.NewServer(publicKey, roles, permissions, rolePermissions, principals, princ
 | Method | Path | Auth | Handler |
 |---|---|---|---|
 | GET | `/api/v1/health` | none | `health` |
-| POST | `/api/v1/` | none | `createPrincipal` (**see note below**) |
 | GET | `/api/v1/roles` | service token | `listRoles` |
 | POST | `/api/v1/roles` | service token | `createRole` |
 | GET | `/api/v1/roles/{id}` | service token | `getRoleByID` |
@@ -247,18 +246,18 @@ rest.NewServer(publicKey, roles, permissions, rolePermissions, principals, princ
 | DELETE | `/api/v1/permissions/{id}` | service token | `deletePermission` |
 | GET | `/api/v1/permissions/{id}/roles` | service token | `listRolesByPermission` |
 | GET | `/api/v1/principals` | service token | `listPrincipals` |
+| POST | `/api/v1/principals` | service token | `createPrincipal` |
 | GET | `/api/v1/principals/by-external-id/{externalID}` | service token | `getPrincipalByExternalID` |
 | GET | `/api/v1/principals/{id}` | service token | `getPrincipalByID` |
 | DELETE | `/api/v1/principals/{id}` | service token | `deletePrincipal` |
 | POST | `/api/v1/principals/{id}/activate` | service token | `activatePrincipal` |
 | POST | `/api/v1/principals/{id}/deactivate` | service token | `deactivatePrincipal` |
+| GET | `/api/v1/principals/{id}/permissions` | service token | `getPrincipalPermissions` |
 | GET | `/api/v1/principals/{id}/roles` | service token | `listRolesByPrincipal` |
 | POST | `/api/v1/principals/{id}/roles` | service token | `assignRoleToPrincipal` |
 | DELETE | `/api/v1/principals/{id}/roles/{roleID}` | service token | `removeRoleFromPrincipal` |
 
 `GET /principals/by-external-id/{externalID}` requires a `?type=user|service` query parameter.
-
-**Route mismatch — `createPrincipal`:** The server registers `createPrincipal` at `POST /api/v1/` (`r.Post("/", ...)` inside the `/api/v1` route group), but the IAM client (`client/client.go:78`) sends requests to `POST /api/v1/principals`. These paths do not match. The route is placed before `r.Use(token.Middleware(...))` in the group, so it intentionally has no auth — but the path itself needs to be reconciled with the client.
 
 ### Helpers (`mappers.go`)
 
@@ -304,13 +303,13 @@ This interface replaces the former `shared/pkg/provisioner.PrincipalProvisioner`
 - `baseURL` — e.g. `"http://iam:8081"`
 - `token` — service token for the calling service
 
-**Bug:** The HTTP client timeout is set with `10 & time.Second` (bitwise AND). Since `time.Second` is `1_000_000_000` and `10` is `0b1010`, the result is `0` — effectively no timeout. This should be `10 * time.Second`.
+The underlying `http.Client` uses a `10 * time.Second` timeout.
 
-**`Provision(ctx, externalID, principalType)`** — posts `{"external_id": "...", "principal_type": "..."}` to `POST /api/v1/principals`. Returns an error if the response status is not `201 Created`. Note: the server currently registers `createPrincipal` at `POST /api/v1/` — see the route mismatch note in the route table above.
+**`Provision(ctx, externalID, principalType)`** — posts `{"external_id": "...", "principal_type": "..."}` to `POST /api/v1/principals`. Returns an error if the response status is not `201 Created`.
 
-**`HasPermission`** — not yet implemented in `client.go`.
+**`HasPermission(ctx, principalID, permission)`** — calls `GET /api/v1/principals/{id}/permissions`, decodes the response envelope, and scans for an exact permission name match.
 
-All requests attach `Authorization: Bearer <token>` and `Content-Type: application/json`.
+All requests attach `Authorization: Bearer <token>` and `Content-Type: application/json`. Requests can also attach `X-Principal-ID` when acting on behalf of a user/principal.
 
 ---
 

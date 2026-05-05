@@ -53,7 +53,7 @@ Single source of truth for identity and credential management. The **only** serv
 - Issue access tokens (15 min expiry, RS256) and refresh tokens (7-day expiry)
 - Issue and rotate service tokens (non-expiring; validity controlled by revocation)
 - Provision an IAM principal automatically when a new identity is registered
-- Run a background daily job to rotate service tokens
+- Provide service-token rotation logic; the background scheduler is not wired yet
 
 **Key database tables (schema `auth`):**
 - `auth.identities` — id, created_at
@@ -61,7 +61,7 @@ Single source of truth for identity and credential management. The **only** serv
 - `auth.refresh_tokens` — id, identity_id, token_hash, expires_at, revoked_at, created_at
 - `auth.service_tokens` — id, identity_id, token, issued_at, revoked_at
 
-**Status:** Repository layer complete. Domain layer largely implemented — `SessionService` fully working (register, login, refresh, logout); `AccountService` interface defined but not yet implemented. Handler layer and `main.go` not started.
+**Status:** Repository layer complete. Domain layer largely implemented — `SessionService`, `AccountService`, `RefreshTokenService`, and `ServiceTokenService` are implemented. Handler layer is only a stub and `cmd/authd/main.go` has not been created.
 
 ---
 
@@ -157,7 +157,7 @@ Standard JSON response envelopes. All handlers write responses through this pack
 
 JWT handling (RS256 / asymmetric).
 
-- **Issue** — only the auth service (and inetbctl) hold the private key and call `Issue()`
+- **Issue** — only auth-domain code currently calls token issuance; `inetbctl` generates RSA keys but does not issue JWTs
 - **Parse** — any service calls `Parse()` with the public key
 - **Middleware** — Chi middleware that validates the Bearer token; only accepts service tokens (user tokens are rejected with 401); injects claims + acting principal into request context
 - **FromContext / ActingPrincipalFromContext** — read injected values in handlers
@@ -328,6 +328,6 @@ Note: `inetbctl token rotate` is referenced in older READMEs but is not yet impl
 |----------|---------|---------|
 | `OWNER_DSN` | inetbctl | Admin DB connection for bootstrap |
 | `{SERVICE}_DSN` | each service | Service-specific DB connection |
-| `PUBLIC_KEY_PATH` / `PRIVATE_KEY_PATH` | auth, inetbctl | PEM key file paths |
+| `PUBLIC_KEY_PATH` / `PRIVATE_KEY_PATH` | services | PEM key file paths; IAM currently loads only the public key but passes both paths to `FileKeyProvider` |
 | `{SERVICE}_ADDR` | each service | Listen address |
 | `AUTH_HASHER` | auth | Hash algorithm: `argon2` or `bcrypt` |
