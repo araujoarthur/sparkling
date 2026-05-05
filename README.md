@@ -127,6 +127,7 @@ The `CONTEXT.md` files are designed for LLMs and coding agents to quickly unders
 - `CONTEXT.md` — Full project architecture, service details, shared package reference
 - `docs/error-handling.md` — Cross-package error translation rules
 - `docs/response-package.md` — Response envelope and handler conventions
+- `docs/token-package.md` — Token middleware, actor resolution, and route parameter helpers
 - `services/iam/CONTEXT.md` — IAM service internals, route table, domain rules
 - `services/auth/CONTEXT.md` — Auth service internals, repository interfaces
 - `shared/pkg/*/CONTEXT.md` — Per-package documentation

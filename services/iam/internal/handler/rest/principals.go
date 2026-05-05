@@ -44,7 +44,7 @@ func (s *Server) listPrincipals(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) getPrincipalByID(w http.ResponseWriter, r *http.Request) {
-	parsed, ok := parseUUIDParam(w, r, "id")
+	parsed, ok := token.ParseUUIDParam(w, r, "id")
 	if !ok {
 		return
 	}
@@ -59,7 +59,7 @@ func (s *Server) getPrincipalByID(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) getPrincipalByExternalID(w http.ResponseWriter, r *http.Request) {
-	parsed, ok := parseUUIDParam(w, r, "externalID")
+	parsed, ok := token.ParseUUIDParam(w, r, "externalID")
 	if !ok {
 		return
 	}
@@ -86,7 +86,7 @@ func (s *Server) deletePrincipal(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	parsed, ok := parseUUIDParam(w, r, "id")
+	parsed, ok := token.ParseUUIDParam(w, r, "id")
 	if !ok {
 		return
 	}
@@ -107,7 +107,7 @@ func (s *Server) activatePrincipal(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	parsed, ok := parseUUIDParam(w, r, "id")
+	parsed, ok := token.ParseUUIDParam(w, r, "id")
 	if !ok {
 		return
 	}
@@ -128,7 +128,7 @@ func (s *Server) deactivatePrincipal(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	parsed, ok := parseUUIDParam(w, r, "id")
+	parsed, ok := token.ParseUUIDParam(w, r, "id")
 	if !ok {
 		return
 	}
@@ -143,7 +143,7 @@ func (s *Server) deactivatePrincipal(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) listRolesByPrincipal(w http.ResponseWriter, r *http.Request) {
-	parsed, ok := parseUUIDParam(w, r, "id")
+	parsed, ok := token.ParseUUIDParam(w, r, "id")
 	if !ok {
 		return
 	}
@@ -169,7 +169,7 @@ func (s *Server) assignRoleToPrincipal(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	parsed, ok := parseUUIDParam(w, r, "id")
+	parsed, ok := token.ParseUUIDParam(w, r, "id")
 	if !ok {
 		return
 	}
@@ -195,12 +195,12 @@ func (s *Server) removeRoleFromPrincipal(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	principalID, ok := parseUUIDParam(w, r, "id")
+	principalID, ok := token.ParseUUIDParam(w, r, "id")
 	if !ok {
 		return
 	}
 
-	roleID, ok := parseUUIDParam(w, r, "roleID")
+	roleID, ok := token.ParseUUIDParam(w, r, "roleID")
 	if !ok {
 		return
 	}
@@ -214,7 +214,7 @@ func (s *Server) removeRoleFromPrincipal(w http.ResponseWriter, r *http.Request)
 }
 
 func (s *Server) getPrincipalPermissions(w http.ResponseWriter, r *http.Request) {
-	parsed, ok := parseUUIDParam(w, r, "id")
+	parsed, ok := token.ParseUUIDParam(w, r, "id")
 	if !ok {
 		return
 	}

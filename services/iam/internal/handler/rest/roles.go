@@ -27,7 +27,7 @@ func (s *Server) listRoles(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) getRoleByID(w http.ResponseWriter, r *http.Request) {
-	roleUUID, ok := parseUUIDParam(w, r, "id")
+	roleUUID, ok := token.ParseUUIDParam(w, r, "id")
 	if !ok {
 		return // response.Error was already called within parseUUIDParam
 	}
@@ -70,7 +70,7 @@ func (s *Server) updateRole(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	roleUUID, ok := parseUUIDParam(w, r, "id")
+	roleUUID, ok := token.ParseUUIDParam(w, r, "id")
 	if !ok {
 		return // response.Error was already called within parseUUIDParam
 	}
@@ -97,7 +97,7 @@ func (s *Server) deleteRole(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	roleUUID, ok := parseUUIDParam(w, r, "id")
+	roleUUID, ok := token.ParseUUIDParam(w, r, "id")
 	if !ok {
 		return // response.Error was already called within parseUUIDParam
 	}
@@ -112,7 +112,7 @@ func (s *Server) deleteRole(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) listPermissionsByRole(w http.ResponseWriter, r *http.Request) {
-	parsed, ok := parseUUIDParam(w, r, "id")
+	parsed, ok := token.ParseUUIDParam(w, r, "id")
 	if !ok {
 		return
 	}
@@ -138,7 +138,7 @@ func (s *Server) assignPermissionToRole(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	parsed, ok := parseUUIDParam(w, r, "id")
+	parsed, ok := token.ParseUUIDParam(w, r, "id")
 	if !ok {
 		return
 	}
@@ -164,12 +164,12 @@ func (s *Server) removePermissionFromRole(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	roleID, ok := parseUUIDParam(w, r, "id")
+	roleID, ok := token.ParseUUIDParam(w, r, "id")
 	if !ok {
 		return
 	}
 
-	permID, ok := parseUUIDParam(w, r, "permID")
+	permID, ok := token.ParseUUIDParam(w, r, "permID")
 	if !ok {
 		return
 	}
@@ -184,7 +184,7 @@ func (s *Server) removePermissionFromRole(w http.ResponseWriter, r *http.Request
 }
 
 func (s *Server) listPrincipalsByRole(w http.ResponseWriter, r *http.Request) {
-	parsed, ok := parseUUIDParam(w, r, "id")
+	parsed, ok := token.ParseUUIDParam(w, r, "id")
 	if !ok {
 		return
 	}

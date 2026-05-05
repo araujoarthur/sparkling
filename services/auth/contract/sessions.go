@@ -37,3 +37,8 @@ type LogoutRequest struct {
 type LogoutAllRequest struct {
 	IdentityID uuid.UUID `json:"identity_id"`
 }
+
+type RefreshResponse struct {
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+}

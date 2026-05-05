@@ -49,7 +49,7 @@ func (s *Server) createPermission(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) getPermissionByID(w http.ResponseWriter, r *http.Request) {
-	parsed, ok := parseUUIDParam(w, r, "id")
+	parsed, ok := token.ParseUUIDParam(w, r, "id")
 	if !ok {
 		return
 	}
@@ -70,7 +70,7 @@ func (s *Server) deletePermission(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	parsed, ok := parseUUIDParam(w, r, "id")
+	parsed, ok := token.ParseUUIDParam(w, r, "id")
 	if !ok {
 		return
 	}
@@ -85,7 +85,7 @@ func (s *Server) deletePermission(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) listRolesByPermission(w http.ResponseWriter, r *http.Request) {
-	parsed, ok := parseUUIDParam(w, r, "id")
+	parsed, ok := token.ParseUUIDParam(w, r, "id")
 	if !ok {
 		return
 	}
