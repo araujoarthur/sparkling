@@ -29,6 +29,11 @@ func (s *Server) deleteIdentity(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) changePassword(w http.ResponseWriter, r *http.Request) {
+	callerID, err := token.ActorFromContext(r.Context())
+	if err != nil {
+		response.Error(w, apierror.ErrUnauthorized, err.Error())
+		return
+	}
 
 }
 
